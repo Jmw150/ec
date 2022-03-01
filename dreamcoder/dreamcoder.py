@@ -1,3 +1,6 @@
+#TODO: remove wildstar imports
+#      clean up code
+
 import datetime
 
 import dill
@@ -9,10 +12,12 @@ try:
     from dreamcoder.recognition import *
 except:
     eprint("Failure loading recognition - only acceptable if using pypy ")
+
 from dreamcoder.enumeration import *
 from dreamcoder.fragmentGrammar import *
 from dreamcoder.taskBatcher import *
 from dreamcoder.primitiveGraph import graphPrimitives
+# clean up to this point
 from dreamcoder.dreaming import backgroundHelmholtzEnumeration
 
 

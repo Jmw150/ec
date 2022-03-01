@@ -7,23 +7,33 @@ import time
 
 
 class FragmentGrammar(object):
+#{{{
     def __init__(self, logVariable, productions):
+#{{{
         self.logVariable = logVariable
         self.productions = productions
         self.likelihoodCache = {}
+#}}}
 
     def clearCache(self):
+#{{{
         self.likelihoodCache = {}
+#}}}
 
     def __repr__(self):
+#{{{
         return "FragmentGrammar(logVariable={self.logVariable}, productions={self.productions}".format(
             self=self
         )
+#}}}
 
     def __str__(self):
+#{{{
         def productionKey(xxx_todo_changeme):
+#{{{
             (l, t, p) = xxx_todo_changeme
             return not isinstance(p, Primitive), -l
+#}}}
 
         return "\n".join(
             ["%f\tt0\t$_" % self.logVariable]
@@ -32,8 +42,10 @@ class FragmentGrammar(object):
                 for l, t, p in sorted(self.productions, key=productionKey)
             ]
         )
+#}}}
 
     def buildCandidates(self, context, environment, request):
+#{{{
         candidates = []
         variableCandidates = []
         for l, t, p in self.productions:
@@ -56,8 +68,10 @@ class FragmentGrammar(object):
 
         z = lse([candidate[0] for candidate in candidates])
         return [(l - z, c, t, p) for l, c, t, p in candidates]
+#}}}
 
     def logLikelihood(self, request, expression):
+#{{{
         _, l, _ = self._logLikelihood(Context.EMPTY, [], request, expression)
         if invalid(l):
             f = "failures/likelihoodFailure%s.pickle" % (time() + getPID())
@@ -73,13 +87,17 @@ class FragmentGrammar(object):
                 pickle.dump((self, request, expression), handle)
             assert False
         return l
+#}}}
 
     def closedUses(self, request, expression):
+#{{{
         _, l, u = self._logLikelihood(Context.EMPTY, [], request, expression)
         return l, u
+#}}}
 
     def _logLikelihood(self, context, environment, request, expression):
         """returns (context, log likelihood, uses)"""
+#{{{
 
         # We can cash likelihood calculations faster whenever they don't involve type inference
         # This is because they are guaranteed to not modify the context,
@@ -230,8 +248,10 @@ class FragmentGrammar(object):
             self.likelihoodCache[cacheKey] = (outTypes, totalLikelihood, allUses)
 
         return context, totalLikelihood, allUses
+#}}}
 
     def expectedUses(self, frontiers):
+#{{{
         if len(list(frontiers)) == 0:
             return Uses()
         likelihoods = [
@@ -248,8 +268,10 @@ class FragmentGrammar(object):
             for z, frontier in zip(zs, likelihoods)
             for l, u in frontier
         )
+#}}}
 
     def insideOutside(self, frontiers, pseudoCounts):
+#{{{
         uses = self.expectedUses(frontiers)
         return FragmentGrammar(
             log(uses.actualVariables + pseudoCounts)
@@ -264,8 +286,10 @@ class FragmentGrammar(object):
                 for _, t, p in self.productions
             ],
         )
+#}}}
 
     def jointFrontiersLikelihood(self, frontiers):
+#{{{
         return sum(
             lse(
                 [
@@ -276,8 +300,10 @@ class FragmentGrammar(object):
             )
             for frontier in frontiers
         )
+#}}}
 
     def jointFrontiersMDL(self, frontiers, CPUs=1):
+#{{{
         return sum(
             parallelMap(
                 CPUs,
@@ -289,15 +315,21 @@ class FragmentGrammar(object):
                 frontiers,
             )
         )
+#}}}
 
     def __len__(self):
+#{{{
         return len(self.productions)
+#}}}
 
     @staticmethod
     def fromGrammar(g):
+#{{{
         return FragmentGrammar(g.logVariable, g.productions)
+#}}}
 
     def toGrammar(self):
+#{{{
         return Grammar(
             self.logVariable,
             [
@@ -306,27 +338,37 @@ class FragmentGrammar(object):
                 for q in [defragment(p)]
             ],
         )
+#}}}
 
     @property
     def primitives(self):
+#{{{
         return [p for _, _, p in self.productions]
+#}}}
 
     @staticmethod
     def uniform(productions):
+#{{{
         return FragmentGrammar(0.0, [(0.0, p.infer(), p) for p in productions])
+#}}}
 
     def normalize(self):
+#{{{
         z = lse([l for l, t, p in self.productions] + [self.logVariable])
         return FragmentGrammar(
             self.logVariable - z, [(l - z, t, p) for l, t, p in self.productions]
         )
+#}}}
 
     def makeUniform(self):
+#{{{
         return FragmentGrammar(
             0.0, [(0.0, p.infer(), p) for _, _, p in self.productions]
         )
+#}}}
 
     def rescoreFrontier(self, frontier):
+#{{{
         return Frontier(
             [
                 FrontierEntry(
@@ -338,9 +380,11 @@ class FragmentGrammar(object):
             ],
             frontier.task,
         )
+#}}}
 
     @staticmethod
     def induceFromFrontiers(
+#{{{
         g0,
         frontiers,
         _=None,
@@ -362,13 +406,16 @@ class FragmentGrammar(object):
 
         # "restricted frontiers" only contain the top K according to the best grammar
         def restrictFrontiers():
+#{{{
             return parallelMap(
                 CPUs, lambda f: bestGrammar.rescoreFrontier(f).topK(topK), frontiers
             )
+#}}}
 
         restrictedFrontiers = []
 
         def grammarScore(g):
+#{{{
             g = g.makeUniform().insideOutside(restrictedFrontiers, pseudoCounts)
             likelihood = g.jointFrontiersMDL(restrictedFrontiers)
             structure = sum(primitiveSize(p) for p in g.primitives)
@@ -378,6 +425,7 @@ class FragmentGrammar(object):
                 # FIXME: This should never occur but it does anyway
                 score = float("-inf")
             return score, g
+#}}}
 
         if aic is not POSITIVEINFINITY:
             restrictedFrontiers = restrictFrontiers()
@@ -515,3 +563,9 @@ class FragmentGrammar(object):
             grammar = grammar.removeProductions(uselessProductions)
 
         return grammar, frontiers
+
+#}}}
+
+#}}}
+
+

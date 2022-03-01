@@ -8,6 +8,7 @@ import subprocess
 
 
 def multicoreEnumeration(
+#{{{
     g,
     tasks,
     _=None,
@@ -19,8 +20,10 @@ def multicoreEnumeration(
     evaluationTimeout=None,
     testing=False,
 ):
+#}}}
     """g: Either a Grammar, or a map from task to grammar.
     Returns (list-of-frontiers, map-from-task-to-search-time)"""
+#{{{
 
     # We don't use actual threads but instead use the multiprocessing
     # library. This is because we need to be able to kill workers.
@@ -88,9 +91,12 @@ def multicoreEnumeration(
     taskToNumberOfPrograms = {t: 0 for t in tasks}
 
     def numberOfHits(f):
+#{{{
         return sum(e.logLikelihood > -0.01 for e in f)
+#}}}
 
     def budgetIncrement(lb):
+#{{{
         if True:
             return 1.5
         # Very heuristic - not sure what to do here
@@ -100,12 +106,16 @@ def multicoreEnumeration(
             return 0.5
         else:
             return 0.25
+#}}}
 
     def maximumFrontiers(j):
+#{{{
         tasks = jobs[j]
         return {t: maximumFrontier - numberOfHits(frontiers[t]) for t in tasks}
+#}}}
 
     def allocateCPUs(n, tasks):
+#{{{
         allocation = {t: 0 for t in tasks}
         while n > 0:
             for t in tasks:
@@ -117,8 +127,10 @@ def multicoreEnumeration(
                 if n == 0:
                     break
         return allocation
+#}}}
 
     def refreshJobs():
+#{{{
         for k in list(jobs.keys()):
             v = [
                 t
@@ -130,6 +142,7 @@ def multicoreEnumeration(
                 jobs[k] = v
             else:
                 del jobs[k]
+#}}}
 
     # Workers put their messages in here
     q = Queue()
@@ -144,6 +157,7 @@ def multicoreEnumeration(
     nextID = 0
 
     while True:
+#{{{
         refreshJobs()
         # Don't launch a job that we are already working on
         # We run the stopwatch whenever the job is being worked on
@@ -203,6 +217,7 @@ def multicoreEnumeration(
                 activeCPUs += allocation[j]
                 lowerBounds[j] += bi
 
+#}}}
         # If nothing is running, and we just tried to launch jobs,
         # then that means we are finished
         if all(not s.running for s in stopwatches.values()):
@@ -253,16 +268,18 @@ def multicoreEnumeration(
     )
 
     return [frontiers[t] for t in tasks], bestSearchTime
-
+#}}}
 
 def wrapInThread(f):
     """
     Returns a function that is designed to be run in a thread/threadlike process.
     Result will be either put into the q
     """
+#{{{
     import dill
 
     def _f(*a, **k):
+#{{{
         q = k.pop("q")
         ID = k.pop("ID")
 
@@ -281,11 +298,13 @@ def wrapInThread(f):
                 )
             )
             return
+#}}}
 
     return _f
-
+#}}}
 
 def solveForTask_ocaml(
+#{{{
     _=None,
     elapsedTime=0.0,
     CPUs=1,
@@ -304,6 +323,7 @@ def solveForTask_ocaml(
     import json
 
     def taskMessage(t):
+#{{{
         m = {
             "examples": [{"inputs": list(xs), "output": y} for xs, y in t.examples],
             "name": t.name,
@@ -315,6 +335,7 @@ def solveForTask_ocaml(
             m["specialTask"] = special
             m["extras"] = extra
         return m
+#}}}
 
     message = {
         "DSL": g.json(),
@@ -388,9 +409,10 @@ def solveForTask_ocaml(
             )
 
     return frontiers, searchTimes, pc
-
+#}}}
 
 def solveForTask_pypy(
+#{{{
     _=None,
     elapsedTime=0.0,
     g=None,
@@ -418,9 +440,10 @@ def solveForTask_pypy(
         lowerBound=lowerBound,
         upperBound=upperBound,
     )
-
+#}}}
 
 def solveForTask_python(
+#{{{
     _=None,
     elapsedTime=0.0,
     g=None,
@@ -448,13 +471,15 @@ def solveForTask_python(
         lowerBound=lowerBound,
         upperBound=upperBound,
     )
-
+#}}}
 
 class EnumerationTimeout(Exception):
+#{{{
     pass
-
+#}}}
 
 def enumerateForTasks(
+#{{{
     g,
     tasks,
     likelihoodModel,
@@ -558,3 +583,6 @@ def enumerateForTasks(
     }
 
     return frontiers, searchTimes, totalNumberOfPrograms
+
+#}}}
+

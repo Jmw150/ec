@@ -2,6 +2,7 @@ from dreamcoder.program import *
 
 
 def graphPrimitives(result, prefix, view=False):
+#{{{
     try:
         from graphviz import Digraph
     except:
@@ -18,6 +19,7 @@ def graphPrimitives(result, prefix, view=False):
     age2primitives = {a: {p for p, ap in age.items() if a == ap} for a in ages}
 
     def lb(s, T=20):
+#{{{
         s = s.split()
         l = []
         n = 0
@@ -28,8 +30,10 @@ def graphPrimitives(result, prefix, view=False):
             n += len(w)
             l.append(w)
         return " ".join(l)
+#}}}
 
     nameSimplification = {
+#{{{
         "fix1": "Y",
         "tower_loopM": "for",
         "tower_embed": "get/set",
@@ -50,6 +54,7 @@ def graphPrimitives(result, prefix, view=False):
         "logo_MULA": "*",
         "logo_PT": "pen-up",
         "logo_GETSET": "get/set",
+#}}}
     }
 
     name = {}
@@ -57,6 +62,7 @@ def graphPrimitives(result, prefix, view=False):
     depth = {}
 
     def getName(p):
+#{{{
         if p in name:
             return name[p]
         children = {k: getName(k) for _, k in p.body.walk() if k.isInvented}
@@ -75,6 +81,7 @@ def graphPrimitives(result, prefix, view=False):
         )
         depth[p] = 1 + max([depth[k] for k in children] + [0])
         return name[p]
+#}}}
 
     for p in primitives:
         getName(p)
@@ -83,6 +90,7 @@ def graphPrimitives(result, prefix, view=False):
     depth2primitives = {d: {p for p in primitives if depth[p] == d} for d in depths}
 
     englishDescriptions = {
+#{{{
         "#(lambda (lambda (map (lambda (index $0 $2)) (range $0))))": "Prefix",
         "#(lambda (lambda (fold $0 $1 (lambda (lambda (cons $1 $0))))))": "Append",
         "#(lambda (cons LPAREN (#(lambda (lambda (fold $0 $1 (lambda (lambda (cons $1 $0)))))) (cons RPAREN empty) $0)))": "Enclose w/ parens",
@@ -97,9 +105,11 @@ def graphPrimitives(result, prefix, view=False):
         "#(lambda (lambda (cons (car $1) (cons '.' (cons (car $0) (cons '.' empty))))))": "Abbreviate name",
         "#(lambda (lambda (cons (car $1) (cons $0 empty))))": "First char+char",
         "#(lambda (#(lambda (lambda (fold $0 $1 (lambda (lambda (cons $1 $0)))))) (#(lambda (lambda (fold $1 $1 (lambda (lambda (fold $0 $0 (lambda (lambda (cdr (if (char-eq? $1 $4) $0 (cons $1 $0))))))))))) STRING (index (length (cdr $0)) $0)) $0))": "Ensure suffix",
+#}}}
     }
 
     def makeUnorderedGraph(fn):
+#{{{
         g = Digraph()
         g.graph_attr["rankdir"] = "LR"
 
@@ -116,8 +126,10 @@ def graphPrimitives(result, prefix, view=False):
             eprint(
                 "Got some kind of error while trying to render primitive graph! Did you install graphviz/dot?"
             )
+#}}}
 
     def makeGraph(ordering, fn):
+#{{{
         g = Digraph()
         g.graph_attr["rankdir"] = "RL"
 
@@ -163,3 +175,7 @@ def graphPrimitives(result, prefix, view=False):
     makeGraph(depth2primitives, prefix + "depth.pdf")
     makeUnorderedGraph(prefix + "unordered.pdf")
     # makeGraph(age2primitives,prefix+'iter.pdf')
+
+#}}}
+
+#}}}
