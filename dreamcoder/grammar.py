@@ -17,6 +17,7 @@ class NoCandidates(Exception):
     pass
 
 
+# (objects) are only needed in python2...
 class Grammar(object):
     def __init__(self, logVariable, productions, continuationType=None):
         self.logVariable = logVariable

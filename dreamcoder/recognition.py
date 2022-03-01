@@ -1,15 +1,18 @@
 from dreamcoder.enumeration import *
 from dreamcoder.grammar import *
-# luke
 
-
+# Garbage collector interface for Python
 import gc
 
 try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
-    from torch.autograd import Variable
+
+    # Variable is Deprecated, so this should be unneeded 
+    #https://pytorch.org/docs/stable/autograd.html#variable-deprecated
+    from torch.autograd import Variable 
+
     from torch.nn.utils.rnn import pack_padded_sequence
 except:
     eprint("WARNING: Could not import torch. This is only okay when doing pypy compression.")
@@ -18,10 +21,11 @@ try:
     import numpy as np
 except:
     eprint("WARNING: Could not import np. This is only okay when doing pypy compression.")
-    
+
+# json format generating functions    
 import json
 
-
+# because of, now deprecated, compatibility need
 def variable(x, volatile=False, cuda=False):
     if isinstance(x, list):
         x = np.array(x)
@@ -31,12 +35,12 @@ def variable(x, volatile=False, cuda=False):
         x = x.cuda()
     return Variable(x, volatile=volatile)
 
+# functional programming stuff
 def maybe_cuda(x, use_cuda):
     if use_cuda:
         return x.cuda()
     else:
         return x
-
 
 def is_torch_not_a_number(v):
     """checks whether a tortured variable is nan"""
@@ -54,10 +58,17 @@ def is_torch_invalid(v):
         return True
     return False
 
+# ?
 def _relu(x): return x.clamp(min=0)
 
 class Entropy(nn.Module):
     """Calculates the entropy of logits"""
+#{{{
+    # logits is what the torch community calls (-inf,inf) values of neural output.
+    #   They are not necessarily actual logits.
+    # https://en.wikipedia.org/wiki/Logit
+    # https://en.wikipedia.org/wiki/Entropy_(information_theory)#Measure_theory
+
     def __init__(self):
         super(Entropy, self).__init__()
 
@@ -65,11 +76,15 @@ class Entropy(nn.Module):
         b = F.softmax(x, dim=0) * F.log_softmax(x, dim=0)
         b = -1.0 * b.sum()
         return b
+#}}}
 
 class GrammarNetwork(nn.Module):
     """Neural network that outputs a grammar"""
+#{{{
     def __init__(self, inputDimensionality, grammar):
         super(GrammarNetwork, self).__init__()
+        # Linear y = xA^T + b
+        # https://pytorch.org/docs/stable/generated/torch.nn.Linear.html#torch.nn.Linear
         self.logProductions = nn.Linear(inputDimensionality, len(grammar)+1)
         self.grammar = grammar
         
@@ -85,6 +100,7 @@ class GrammarNetwork(nn.Module):
     def batchedLogLikelihoods(self, xs, summaries):
         """Takes as input BxinputDimensionality vector & B likelihood summaries;
         returns B-dimensional vector containing log likelihood of each summary"""
+        #{{{
         use_cuda = xs.device.type == 'cuda'
 
         B = xs.size(0)
@@ -128,13 +144,15 @@ class GrammarNetwork(nn.Module):
 
         denominator = (maybe_cuda(torch.tensor(N).float(),use_cuda) * z).sum(1)
         return numerator - denominator
+        #}}}
 
-        
+#}}}
 
 class ContextualGrammarNetwork_LowRank(nn.Module):
     def __init__(self, inputDimensionality, grammar, R=16):
         """Low-rank approximation to bigram model. Parameters is linear in number of primitives.
         R: maximum rank"""
+#{{{
         
         super(ContextualGrammarNetwork_LowRank, self).__init__()
 
@@ -142,7 +160,7 @@ class ContextualGrammarNetwork_LowRank(nn.Module):
 
         self.R = R # embedding size
 
-        # library now just contains a list of indicies which go with each primitive
+        # library now just contains a list of indices which go with each primitive
         self.grammar = grammar
         self.library = {}
         self.n_grammars = 0
@@ -167,7 +185,8 @@ class ContextualGrammarNetwork_LowRank(nn.Module):
 
         transitionMatrix = self.transitionMatrix(x)
         
-        return ContextualGrammar(self.grammarFromVector(transitionMatrix[-1]), self.grammarFromVector(transitionMatrix[-2]),
+        return ContextualGrammar(self.grammarFromVector(transitionMatrix[-1]), 
+                                 self.grammarFromVector(transitionMatrix[-2]),
                 {prim: [self.grammarFromVector(transitionMatrix[j]) for j in js]
                  for prim, js in self.library.items()} )
         
@@ -348,12 +367,13 @@ class ContextualGrammarNetwork_LowRank(nn.Module):
             _l = torch.cat([ summary.logLikelihood(g) for summary,g in zip(summaries, gs) ])
             assert torch.all((ll - _l).abs() < 0.0001)
         return ll
+#}}}
     
 class ContextualGrammarNetwork_Mask(nn.Module):
     def __init__(self, inputDimensionality, grammar):
         """Bigram model, but where the bigram transitions are unconditional.
-        Individual primitive probabilities are still conditional (predicted by neural network)
-        """
+        Individual primitive probabilities are still conditional (predicted by neural network) """
+#{{{
         
         super(ContextualGrammarNetwork_Mask, self).__init__()
 
@@ -493,11 +513,11 @@ class ContextualGrammarNetwork_Mask(nn.Module):
             _l = torch.cat([ summary.logLikelihood(g) for summary,g in zip(summaries, gs) ])
             assert torch.all((ll - _l).abs() < 0.0001)
         return ll
+#}}}
         
-                
-
 class ContextualGrammarNetwork(nn.Module):
     """Like GrammarNetwork but ~contextual~"""
+#{{{
     def __init__(self, inputDimensionality, grammar):
         super(ContextualGrammarNetwork, self).__init__()
         
@@ -619,27 +639,40 @@ class ContextualGrammarNetwork(nn.Module):
             assert torch.all((ll - _l).abs() < 0.0001)
 
         return ll
+#}}}
         
-
 class RecognitionModel(nn.Module):
-    def __init__(self,featureExtractor,grammar,hidden=[64],activation="tanh",
-                 rank=None,contextual=False,mask=False,
-                 cuda=False,
-                 previousRecognitionModel=None,
-                 id=0):
-        super(RecognitionModel, self).__init__()
-        self.id = id
-        self.trained=False
-        self.use_cuda = cuda
+    # what should be the main neural system of this file
+#{{{
+    def __init__(self,
+    #{{{
+        featureExtractor,
+        grammar,
+        hidden=[64],
+        activation="tanh",
+        rank=None,
+        contextual=False,
+        mask=False,
+        cuda=False,
+        previousRecognitionModel=None,
+        id=0
+        ):
 
+        super(RecognitionModel, self).__init__()
+
+        self.id = id
+        self.trained = False
+        self.use_cuda = cuda
         self.featureExtractor = featureExtractor
-        # Sanity check - make sure that all of the parameters of the
+
+        # Runtime check - make sure that all of the parameters of the
         # feature extractor were added to our parameters as well
         if hasattr(featureExtractor, 'parameters'):
             for parameter in featureExtractor.parameters():
                 assert any(myParameter is parameter for myParameter in self.parameters())
 
-        # Build the multilayer perceptron that is sandwiched between the feature extractor and the grammar
+        # Build the multilayer perceptron that is sandwiched between 
+        # the feature extractor and the grammar
         if activation == "sigmoid":
             activation = nn.Sigmoid
         elif activation == "relu":
@@ -648,15 +681,25 @@ class RecognitionModel(nn.Module):
             activation = nn.Tanh
         else:
             raise Exception('Unknown activation function ' + str(activation))
-        self._MLP = nn.Sequential(*[ layer
-                                     for j in range(len(hidden))
-                                     for layer in [
-                                             nn.Linear(([featureExtractor.outputDimensionality] + hidden)[j],
-                                                       hidden[j]),
-                                             activation()]])
+
+
+        # what is this for?
+        self._MLP = nn.Sequential(
+            *[ layer
+               for j in range(len(hidden))
+                for layer in [ 
+                    nn.Linear(
+                        ([featureExtractor.outputDimensionality] + hidden)[j], 
+                        hidden[j]
+                            ),
+                    activation()
+                ]
+             ]
+            )
 
         self.entropy = Entropy()
 
+        # why?
         if len(hidden) > 0:
             self.outputDimensionality = self._MLP[-2].out_features
             assert self.outputDimensionality == hidden[-1]
@@ -665,10 +708,10 @@ class RecognitionModel(nn.Module):
 
         self.contextual = contextual
         if self.contextual:
-            if mask:
-                self.grammarBuilder = ContextualGrammarNetwork_Mask(self.outputDimensionality, grammar)
-            else:
-                self.grammarBuilder = ContextualGrammarNetwork_LowRank(self.outputDimensionality, grammar, rank)
+         if mask:
+          self.grammarBuilder = ContextualGrammarNetwork_Mask(self.outputDimensionality, grammar)
+         else:
+          self.grammarBuilder = ContextualGrammarNetwork_LowRank(self.outputDimensionality, grammar, rank)
         else:
             self.grammarBuilder = GrammarNetwork(self.outputDimensionality, grammar)
         
@@ -684,8 +727,10 @@ class RecognitionModel(nn.Module):
         if previousRecognitionModel:
             self._MLP.load_state_dict(previousRecognitionModel._MLP.state_dict())
             self.featureExtractor.load_state_dict(previousRecognitionModel.featureExtractor.state_dict())
+    #}}}
             
     def auxiliaryLoss(self, frontier, features):
+    #{{{
         # Compute a vector of uses
         ls = frontier.bestPosterior.program
         def uses(summary):
@@ -703,31 +748,44 @@ class RecognitionModel(nn.Module):
         if self.use_cuda: u = u.cuda()
         al = self._auxiliaryLoss(self._auxiliaryPrediction(features), u)
         return al
+    #}}}
             
     def taskEmbeddings(self, tasks):
-        return {task: self.featureExtractor.featuresOfTask(task).data.cpu().numpy()
+        #{{{
+        return {task: self.featureExtractor
+                          .featuresOfTask(task)
+                          .data
+                          .cpu()
+                          .numpy()
                 for task in tasks}
+        #}}}
 
     def forward(self, features):
         """returns either a Grammar or a ContextualGrammar
         Takes as input the output of featureExtractor.featuresOfTask"""
+    #{{{
         features = self._MLP(features)
         return self.grammarBuilder(features)
+    #}}}
 
     def auxiliaryPrimitiveEmbeddings(self):
         """Returns the actual outputDimensionality weight vectors for each of the primitives."""
+    #{{{
         auxiliaryWeights = self._auxiliaryPrediction.weight.data.cpu().numpy()
         primitivesDict =  {self.grammar.primitives[i] : auxiliaryWeights[i, :] for i in range(len(self.grammar.primitives))}
         return primitivesDict
+    #}}}
 
     def grammarOfTask(self, task):
+        #{{{
         features = self.featureExtractor.featuresOfTask(task)
         if features is None: return None
         return self(features)
+        #}}}
 
     def grammarLogProductionsOfTask(self, task):
         """Returns the grammar logits from non-contextual models."""
-
+        #{{{
         features = self.featureExtractor.featuresOfTask(task)
         if features is None: return None
 
@@ -751,12 +809,16 @@ class RecognitionModel(nn.Module):
                 assert False
         else:
             return self.grammarBuilder.logProductions(features)
+        #}}}
 
     def grammarFeatureLogProductionsOfTask(self, task):
+        #{{{
         return torch.tensor(self.grammarOfTask(task).untorch().featureVector())
+        #}}}
 
     def grammarLogProductionDistanceToTask(self, task, tasks):
         """Returns the cosine similarity of all other tasks to a given task."""
+        #{{{
         taskLogits = self.grammarLogProductionsOfTask(task).unsqueeze(0) # Change to [1, D]
         assert taskLogits is not None, 'Grammar log productions are not defined for this task.'
         otherTasks = [t for t in tasks if t is not task] # [nTasks -1 , D]
@@ -766,9 +828,11 @@ class RecognitionModel(nn.Module):
         cos = nn.CosineSimilarity(dim=1, eps=1e-6)
         cosMatrix = cos(taskLogits, otherLogits)
         return cosMatrix.data.cpu().numpy()
+        #}}}
 
     def grammarEntropyOfTask(self, task):
         """Returns the entropy of the grammar distribution from non-contextual models for a task."""
+        #{{{
         grammarLogProductionsOfTask = self.grammarLogProductionsOfTask(task)
 
         if grammarLogProductionsOfTask is None: return None
@@ -778,33 +842,47 @@ class RecognitionModel(nn.Module):
         else:
             e = Entropy()
             return e(grammarLogProductionsOfTask)
+        #}}}
 
     def taskAuxiliaryLossLayer(self, tasks):
+        #{{{
         return {task: self._auxiliaryPrediction(self.featureExtractor.featuresOfTask(task)).view(-1).data.cpu().numpy()
                 for task in tasks}
+        #}}}
                 
     def taskGrammarFeatureLogProductions(self, tasks):
+        #{{{
         return {task: self.grammarFeatureLogProductionsOfTask(task).data.cpu().numpy()
                 for task in tasks}
+        #}}}
 
     def taskGrammarLogProductions(self, tasks):
+        #{{{
         return {task: self.grammarLogProductionsOfTask(task).data.cpu().numpy()
                 for task in tasks}
+        #}}}
 
     def taskGrammarStartProductions(self, tasks):
+        #{{{
         return {task: np.array([l for l,_1,_2 in g.productions ])
                 for task in tasks
                 for g in [self.grammarOfTask(task).untorch().noParent] }
+        #}}}
 
     def taskHiddenStates(self, tasks):
+        #{{{
         return {task: self._MLP(self.featureExtractor.featuresOfTask(task)).view(-1).data.cpu().numpy()
                 for task in tasks}
+        #}}}
 
     def taskGrammarEntropies(self, tasks):
+        #{{{
         return {task: self.grammarEntropyOfTask(task).data.cpu().numpy()
                 for task in tasks}
+        #}}}
 
     def frontierKL(self, frontier, auxiliary=False, vectorized=True):
+        #{{{
         features = self.featureExtractor.featuresOfTask(frontier.task)
         if features is None:
             return None, None
@@ -821,9 +899,10 @@ class RecognitionModel(nn.Module):
             
             ll = self.grammarBuilder.batchedLogLikelihoods(features, [entry.program]).view(-1)
             return -ll, al
+        #}}}
             
-
     def frontierBiasOptimal(self, frontier, auxiliary=False, vectorized=True):
+        #{{{
         if not vectorized:
             features = self.featureExtractor.featuresOfTask(frontier.task)
             if features is None: return None, None
@@ -846,14 +925,17 @@ class RecognitionModel(nn.Module):
         lls = lls + (actual_ll.cuda() if self.use_cuda else actual_ll)
         ml = -lls.max() #Beware that inputs to max change output type
         return ml, al
+        #}}}
 
     def replaceProgramsWithLikelihoodSummaries(self, frontier):
+        #{{{
         return Frontier(
             [FrontierEntry(
                 program=self.grammar.closedLikelihoodSummary(frontier.task.request, e.program),
                 logLikelihood=e.logLikelihood,
                 logPrior=e.logPrior) for e in frontier],
             task=frontier.task)
+        #}}}
 
     def train(self, frontiers, _=None, steps=None, lr=0.001, topK=5, CPUs=1,
               timeout=None, evaluationTimeout=0.001,
@@ -864,6 +946,7 @@ class RecognitionModel(nn.Module):
         helmholtzFrontiers: Frontiers from programs enumerated from generative model (optional)
         If helmholtzFrontiers is not provided then we will sample programs during training
         """
+        #{{{
         assert (steps is not None) or (timeout is not None), \
             "Cannot train recognition model without either a bound on the number of gradient steps or bound on the training time"
         if steps is None: steps = 9999999
@@ -883,6 +966,7 @@ class RecognitionModel(nn.Module):
         randomHelmholtz = len(helmholtzFrontiers) == 0
         
         class HelmholtzEntry:
+            #{{{
             def __init__(self, frontier, owner):
                 self.request = frontier.task.request
                 self.task = None
@@ -902,10 +986,8 @@ class RecognitionModel(nn.Module):
                 f = Frontier(self.frontier.force().entries,
                              task=self.task)
                 return f
+            #}}}
         
-            
-            
-
         # Should we recompute tasks on the fly from Helmholtz?  This
         # should be done if the task is stochastic, or if there are
         # different kinds of inputs on which it could be run. For
@@ -920,6 +1002,7 @@ class RecognitionModel(nn.Module):
         
         helmholtzIndex = [0]
         def getHelmholtz():
+            #{{{
             if randomHelmholtz:
                 if helmholtzIndex[0] >= len(helmholtzFrontiers):
                     updateHelmholtzTasks()
@@ -944,8 +1027,10 @@ class RecognitionModel(nn.Module):
                     return getHelmholtz() # because we just cleared everything
             assert f.task is not None
             return f.makeFrontier()
+            #}}}
             
         def updateHelmholtzTasks():
+            #{{{
             updateCPUs = CPUs if hasattr(self.featureExtractor, 'parallelTaskOfProgram') and self.featureExtractor.parallelTaskOfProgram else 1
             if updateCPUs > 1: eprint("Updating Helmholtz tasks with",updateCPUs,"CPUs",
                                       "while using",getThisMemoryUsage(),"memory")
@@ -995,7 +1080,7 @@ class RecognitionModel(nn.Module):
             for i in reversed(badIndices):
                 assert helmholtzFrontiers[i].task is None
                 del helmholtzFrontiers[i]
-
+            #}}}
 
         # We replace each program in the frontier with its likelihoodSummary
         # This is because calculating likelihood summaries requires juggling types
@@ -1086,8 +1171,10 @@ class RecognitionModel(nn.Module):
         eprint("(ID=%d): " % self.id, " Trained recognition model in",time.time() - start,"seconds")
         self.trained=True
         return self
+        #}}}
 
     def sampleHelmholtz(self, requests, statusUpdate=None, seed=None):
+        #{{{
         if seed is not None:
             random.seed(seed)
         request = random.choice(requests)
@@ -1111,8 +1198,10 @@ class RecognitionModel(nn.Module):
                                            logLikelihood=0., logPrior=ll)],
                             task=task)
         return frontier
+        #}}}
 
     def sampleManyHelmholtz(self, requests, N, CPUs):
+        #{{{
         eprint("Sampling %d programs from the prior on %d CPUs..." % (N, CPUs))
         flushEverything()
         frequency = N / 50
@@ -1138,8 +1227,10 @@ class RecognitionModel(nn.Module):
         flushEverything()
 
         return samples
+        #}}}
 
     def enumerateFrontiers(self,
+        #{{{
                            tasks,
                            enumerationTimeout=None,
                            testing=False,
@@ -1160,9 +1251,11 @@ class RecognitionModel(nn.Module):
                                     enumerationTimeout=enumerationTimeout,
                                     CPUs=CPUs, maximumFrontier=maximumFrontier,
                                     evaluationTimeout=evaluationTimeout)
-
+        #}}}
+#}}}
 
 class RecurrentFeatureExtractor(nn.Module):
+#{{{
     def __init__(self, _=None,
                  tasks=None,
                  cuda=False,
@@ -1362,13 +1455,11 @@ class RecurrentFeatureExtractor(nn.Module):
                 if len(ys) == len(xss):
                     return Task("Helmholtz", tp, list(zip(xss, ys)))
             return None
-                
-            
+#}}}
     
 class LowRank(nn.Module):
-    """
-    Module that outputs a rank R matrix of size m by n from input of size i.
-    """
+    """ Module that outputs a rank R matrix of size m by n from input of size i.  """
+#{{{
     def __init__(self, i, m, n, r):
         """
         i: input dimension
@@ -1414,11 +1505,10 @@ class LowRank(nn.Module):
         if needToSqueeze:
             y = y.squeeze(0)
         return y
-            
-            
-            
+#}}}
 
 class DummyFeatureExtractor(nn.Module):
+#{{{
     def __init__(self, tasks, testingTasks=[], cuda=False):
         super(DummyFeatureExtractor, self).__init__()
         self.outputDimensionality = 1
@@ -1429,8 +1519,10 @@ class DummyFeatureExtractor(nn.Module):
         return variable([[0.]]*len(ts)).float()
     def taskOfProgram(self, p, t):
         return Task("dummy task", t, [])
+    #}}}
 
 class RandomFeatureExtractor(nn.Module):
+#{{{
     def __init__(self, tasks):
         super(RandomFeatureExtractor, self).__init__()
         self.outputDimensionality = 1
@@ -1441,15 +1533,19 @@ class RandomFeatureExtractor(nn.Module):
         return variable([[random.random()] for _ in range(len(ts)) ]).float()
     def taskOfProgram(self, p, t):
         return Task("dummy task", t, [])
+    #}}}
 
 class Flatten(nn.Module):
+#{{{
     def __init__(self):
         super(Flatten, self).__init__()
 
     def forward(self, x):
         return x.view(x.size(0), -1)
+#}}}
 
 class ImageFeatureExtractor(nn.Module):
+#{{{
     def __init__(self, inputImageDimension, resizedDimension=None,
                  channels=1):
         super(ImageFeatureExtractor, self).__init__()
@@ -1507,6 +1603,7 @@ class ImageFeatureExtractor(nn.Module):
         y = self.encoder(variabled)
         if insertBatch: y = y[0,:]
         return y
+#}}}
 
 class JSONFeatureExtractor(object):
     def __init__(self, tasks, cudaFalse):
