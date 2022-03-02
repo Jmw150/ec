@@ -15,82 +15,104 @@ import hashlib
 
 
 def computeMD5hash(my_string):
-#{{{
+    # {{{
     # https://stackoverflow.com/questions/13259691/convert-string-to-md5
     m = hashlib.md5()
     m.update(my_string.encode("utf-8"))
     return m.hexdigest()
-#}}}
+
+
+# }}}
+
 
 class Thunk(object):
-#{{{
+    # {{{
     # A class for lazy evaluation
     def __init__(self, thing):
-#{{{
+        # {{{
         self.thing = thing
         self.evaluated = False
-#}}}
+
+    # }}}
 
     def force(self):
-#{{{
+        # {{{
         if self.evaluated:
             return self.thing
         else:
             self.thing = self.thing()
             self.evaluated = True
             return self.thing
-#}}}
-#}}}
+
+
+# }}}
+# }}}
+
 
 def cindex(i):
-#{{{
+    # {{{
     return lambda a: a[i]
-#}}}
+
+
+# }}}
+
 
 class ConstantFunction:
-#{{{
+    # {{{
     def __init__(self, v):
-#{{{
+        # {{{
         self.v = v
-#}}}
+
+    # }}}
 
     def __call__(self, *a, **k):
-#{{{
+        # {{{
         return self.v
-#}}}
-#}}}
+
+
+# }}}
+# }}}
+
 
 def eprint(*args, **kwargs):
-#{{{
+    # {{{
     print(*args, file=sys.stderr, **kwargs)
     flushEverything()
-#}}}
+
+
+# }}}
+
 
 class Bunch(object):
-#{{{
+    # {{{
     def __init__(self, d):
-#{{{
+        # {{{
         self.__dict__.update(d)
-#}}}
+
+    # }}}
 
     def __setitem__(self, key, item):
-#{{{
+        # {{{
         self.__dict__[key] = item
-#}}}
+
+    # }}}
 
     def __getitem__(self, key):
-#{{{
+        # {{{
         return self.__dict__[key]
-#}}}
-#}}}
+
+
+# }}}
+# }}}
+
 
 def curry(fn):
     """Curries a function. Hacky way to return a curried version of functions with arbitrary #s of args."""
-#{{{
+    # {{{
 
     def make_curry_fn(signature):
         """Redefines a currying function with the appropriate arguments. Hacky."""
-#{{{
+        # {{{
         tmp_curry = "def tmp_curry(f): return "
         tmp_curry += " ".join(
             ["lambda %s: " % argname for argname in signature.parameters]
@@ -98,16 +120,20 @@ def curry(fn):
         tmp_curry += "f"
         tmp_curry += str(signature)
         return tmp_curry
-#}}}
+
+    # }}}
 
     exec(make_curry_fn(inspect.signature(fn)), globals())
     return tmp_curry(fn)
-#}}}
+
+
+# }}}
+
 
 class Curried:
-#{{{
+    # {{{
     def __init__(self, f, arguments=None, arity=None):
-#{{{
+        # {{{
         if arity is None:
             arity = len(inspect.getargspec(f)[0])
         self.f = f
@@ -115,46 +141,55 @@ class Curried:
         if arguments is None:
             arguments = []
         self.arguments = arguments
-#}}}
+
+    # }}}
 
     def __call__(self, x):
-#{{{
+        # {{{
         arguments = self.arguments + [x]
         if len(arguments) == self.arity:
             return self.f(*arguments)
         else:
             return Curried(self.f, arguments=arguments, arity=self.arity)
-#}}}
+
+    # }}}
 
     def __str__(self):
-#{{{
+        # {{{
         if len(self.arguments) == 0:
             return f"Curried({self.f}/{self.arity})"
         else:
             return (
                 f"Curried({self.f}/{self.arity}, {', '.join(map(str,self.arguments))})"
             )
-#}}}
+
+    # }}}
 
     def __repr__(self):
-#{{{
+        # {{{
         return str(self)
-#}}}
-#}}}
+
+
+# }}}
+# }}}
+
 
 def hashable(v):
     """Determine whether `v` can be hashed."""
-#{{{
+    # {{{
     try:
         hash(v)
     except TypeError:
         return False
     return True
-#}}}
+
+
+# }}}
+
 
 def flatten(x, abort=lambda x: False):
     """Recursively unroll iterables."""
-#{{{
+    # {{{
     if abort(x):
         yield x
         return
@@ -162,11 +197,13 @@ def flatten(x, abort=lambda x: False):
         yield from chain(*(flatten(i, abort) for i in x))
     except TypeError:  # not iterable
         yield x
-#{{{
+
+
+# {{{
 
 
 def growImage(i, iterations=2):
-#}}}
+    # }}}
     import numpy as np
 
     for _ in range(iterations):
@@ -186,10 +223,12 @@ def growImage(i, iterations=2):
         i = ip
     return ip
 
-#}}}
+
+# }}}
+
 
 def summaryStatistics(n, times):
-#{{{
+    # {{{
     if len(times) == 0:
         eprint(n, "no successful times to report statistics on!")
     else:
@@ -204,17 +243,22 @@ def summaryStatistics(n, times):
             "\tstandard deviation",
             int(standardDeviation(times) + 0.5),
         )
-#}}}
+
+
+# }}}
+
 
 def updateTaskSummaryMetrics(taskSummaryMetrics, newMetricsDict, key):
     """Updates a taskSummaryMetrics dict from tasks -> metrics with new metrics under the given key."""
-#{{{
+    # {{{
     for task in newMetricsDict:
         if task in taskSummaryMetrics:
             taskSummaryMetrics[task][key] = newMetricsDict[task]
         else:
             taskSummaryMetrics[task] = {key: newMetricsDict[task]}
-#}}}
+
+
+# }}}
 
 
 NEGATIVEINFINITY = float("-inf")
@@ -225,7 +269,7 @@ PARALLELBASESEED = None
 
 
 def parallelMap(
-#{{{
+    # {{{
     numberOfCPUs,
     f,
     *xs,
@@ -234,9 +278,9 @@ def parallelMap(
     memorySensitive=False,
     seedRandom=False,
 ):
-#}}}
+    # }}}
     """seedRandom: Should each parallel worker be given a different random seed?"""
-#{{{
+    # {{{
     global PARALLELMAPDATA
     global PARALLELBASESEED
 
@@ -282,10 +326,13 @@ def parallelMap(
     PARALLELMAPDATA = None
     PARALLELBASESEED = None
     return [ys[inversePermutation[j]] for j in range(n)]
-#}}}
+
+
+# }}}
+
 
 def parallelMapCallBack(j):
-#{{{
+    # {{{
     global PARALLELMAPDATA
     global PARALLELBASESEED
     if PARALLELBASESEED is not None:
@@ -299,28 +346,37 @@ def parallelMapCallBack(j):
             % (traceback.format_exc())
         )
         raise e
-#}}}
+
+
+# }}}
+
 
 def log(x):
-#{{{
+    # {{{
     t = type(x)
     if t == int or t == float:
         if x == 0:
             return NEGATIVEINFINITY
         return math.log(x)
     return x.log()
-#}}}
+
+
+# }}}
+
 
 def exp(x):
-#{{{
+    # {{{
     t = type(x)
     if t == int or t == float:
         return math.exp(x)
     return x.exp()
-#}}}
+
+
+# }}}
+
 
 def lse(x, y=None):
-#{{{
+    # {{{
     if y is None:
         largest = None
         if len(x) == 0:
@@ -352,10 +408,13 @@ def lse(x, y=None):
             else:
                 return y + math.log(1.0 + math.exp(x - y))
         return torchSoftMax(x, y)
-#}}}
+
+
+# }}}
+
 
 def torchSoftMax(x, y=None):
-#{{{
+    # {{{
     from torch.nn.functional import log_softmax
     import torch
 
@@ -366,30 +425,42 @@ def torchSoftMax(x, y=None):
     x = torch.cat((x, y))
     # this is so stupid
     return (x - log_softmax(x, dim=0))[0]
-#}}}
+
+
+# }}}
+
 
 def invalid(x):
-#{{{
+    # {{{
     return math.isinf(x) or math.isnan(x)
-#}}}
+
+
+# }}}
+
 
 def valid(x):
-#{{{
+    # {{{
     return not invalid(x)
-#}}}
+
+
+# }}}
+
 
 def forkCallBack(x):
-#{{{
+    # {{{
     [f, a, k] = x
     try:
         return f(*a, **k)
     except Exception as e:
         eprint("Exception in worker during forking:\n%s" % (traceback.format_exc()))
         raise e
-#}}}
+
+
+# }}}
+
 
 def callFork(f, *arguments, **kw):
-#{{{
+    # {{{
     """Forks a new process to execute the call. Blocks until the call completes."""
     global FORKPARAMETERS
 
@@ -400,14 +471,16 @@ def callFork(f, *arguments, **kw):
     workers.terminate()
     assert len(ys) == 1
     return ys[0]
-#}}}
+
+
+# }}}
 
 
 PARALLELPROCESSDATA = None
 
 
 def launchParallelProcess(f, *a, **k):
-#{{{
+    # {{{
     global PARALLELPROCESSDATA
 
     PARALLELPROCESSDATA = [f, a, k]
@@ -418,10 +491,13 @@ def launchParallelProcess(f, *a, **k):
     p.start()
     PARALLELPROCESSDATA = None
     return p
-#}}}
+
+
+# }}}
+
 
 def _launchParallelProcess():
-#{{{
+    # {{{
     global PARALLELPROCESSDATA
     [f, a, k] = PARALLELPROCESSDATA
     try:
@@ -429,10 +505,13 @@ def _launchParallelProcess():
     except Exception as e:
         eprint("Exception in worker during forking:\n%s" % (traceback.format_exc()))
         raise e
-#}}}
+
+
+# }}}
+
 
 def jsonBinaryInvoke(binary, message):
-#{{{
+    # {{{
     import json
     import subprocess
     import os
@@ -455,12 +534,18 @@ def jsonBinaryInvoke(binary, message):
             handle.write(response.decode("utf-8"))
         raise e
     return response
-#}}}
+
+
+# }}}
+
 
 class CompiledTimeout(Exception):
-#{{{
+    # {{{
     pass
-#}}}
+
+
+# }}}
+
 
 def get_root_dir():
     """
@@ -469,21 +554,26 @@ def get_root_dir():
     This method is primarily used in order to locate the binaries at the root of the
     repository.
     """
-#{{{
+    # {{{
     return os.path.join(os.path.dirname(__file__), os.pardir)
-#}}}
+
+
+# }}}
+
 
 def get_data_dir():
     """
     Returns the absolute path to the data directory of the repository as a string.
     """
-#{{{
+    # {{{
     return os.path.join(get_root_dir(), "data")
-#}}}
+
+
+# }}}
 
 
 def callCompiled(f, *arguments, **keywordArguments):
-#{{{
+    # {{{
     import dill
 
     pypyArgs = []
@@ -548,24 +638,28 @@ def callCompiled(f, *arguments, **keywordArguments):
         sys.exit(1)
 
     return result
-#}}}
+
+
+# }}}
 
 
 class timing(object):
-#{{{
+    # {{{
     def __init__(self, message):
-#{{{
+        # {{{
         self.message = message
-#}}}
+
+    # }}}
 
     def __enter__(self):
-#{{{
+        # {{{
         self.start = time.time()
         return self
-#}}}
+
+    # }}}
 
     def __exit__(self, type, value, traceback):
-#{{{
+        # {{{
         dt = time.time() - self.start
         if isinstance(self.message, str):
             message = self.message
@@ -574,43 +668,51 @@ class timing(object):
         else:
             assert False, "Timing message should be string function"
         eprint("%s in %.1f seconds" % (message, dt))
-#}}}
-#}}}
+
+
+# }}}
+# }}}
 
 
 class random_seed(object):
-#{{{
+    # {{{
     def __init__(self, seed):
-#{{{
+        # {{{
         self.seed = seed
-#}}}
+
+    # }}}
 
     def __enter__(self):
-#{{{
+        # {{{
         self._oldSeed = random.getstate()
         random.seed(self.seed)
         return self
-#}}}
+
+    # }}}
 
     def __exit__(self, type, value, traceback):
-#{{{
+        # {{{
         random.setstate(self._oldSeed)
-#}}}
-#}}}
+
+
+# }}}
+# }}}
 
 
 def randomPermutation(l):
-#{{{
+    # {{{
     import random
 
     l = list(l)
     random.shuffle(l)
     return l
-#}}}
+
+
+# }}}
 
 
 def batches(data, size=1):
-#{{{
+    # {{{
     import random
 
     # Randomly permute the data
@@ -621,7 +723,9 @@ def batches(data, size=1):
     while start < len(data):
         yield data[start : size + start]
         start += size
-#}}}
+
+
+# }}}
 
 
 def sampleDistribution(d):
@@ -631,7 +735,7 @@ def sampleDistribution(d):
     If the tuples are of length 2 then it returns the second element
     Otherwise it returns the suffix tuple
     """
-#{{{
+    # {{{
     import random
 
     z = float(sum(t[0] for t in d))
@@ -651,7 +755,9 @@ def sampleDistribution(d):
         u += p
 
     assert False
-#}}}
+
+
+# }}}
 
 
 def sampleLogDistribution(d):
@@ -661,7 +767,7 @@ def sampleLogDistribution(d):
     If the tuples are of length 2 then it returns the second element
     Otherwise it returns the suffix tuple
     """
-#{{{
+    # {{{
     import random
 
     z = lse([t[0] for t in d])
@@ -676,11 +782,13 @@ def sampleLogDistribution(d):
                 return t[1:]
         u += p
     assert False
-#}}}
+
+
+# }}}
 
 
 def testTrainSplit(x, trainingFraction, seed=0):
-#{{{
+    # {{{
     if trainingFraction > 1.1:
         # Assume that the training fraction is actually the number of tasks
         # that we want to train on
@@ -701,41 +809,51 @@ def testTrainSplit(x, trainingFraction, seed=0):
     train = [t for j, t in enumerate(x) if j in training]
     test = [t for j, t in enumerate(x) if j not in training]
     return test, train
-#}}}
+
+
+# }}}
 
 
 def numberOfCPUs():
-#{{{
+    # {{{
     import multiprocessing
 
     return multiprocessing.cpu_count()
-#}}}
+
+
+# }}}
 
 
 def loadPickle(f):
-#{{{
+    # {{{
     with open(f, "rb") as handle:
         d = pickle.load(handle)
     return d
-#}}}
+
+
+# }}}
 
 
 def dumpPickle(o, f):
-#{{{
+    # {{{
     with open(f, "wb") as handle:
         pickle.dump(o, handle)
-#}}}
+
+
+# }}}
 
 
 def fst(l):
-#{{{
+    # {{{
     for v in l:
         return v
-#}}}
+
+
+# }}}
 
 
 def mean(l):
-#{{{
+    # {{{
     n = 0
     t = None
     for x in l:
@@ -749,64 +867,77 @@ def mean(l):
         eprint("warning: asked to calculate the mean of an empty list. returning zero.")
         return 0
     return t / float(n)
-#}}}
+
+
+# }}}
 
 
 def variance(l):
-#{{{
+    # {{{
     m = mean(l)
     return sum((x - m) ** 2 for x in l) / len(l)
-#}}}
+
+
+# }}}
 
 
 def standardDeviation(l):
-#{{{
+    # {{{
     return variance(l) ** 0.5
-#}}}
+
+
+# }}}
 
 
 def median(l):
-#{{{
+    # {{{
     if len(l) <= 0:
         return None
     l = sorted(l)
     if len(l) % 2 == 1:
         return l[len(l) // 2]
     return 0.5 * (l[len(l) // 2] + l[len(l) // 2 - 1])
-#}}}
+
+
+# }}}
 
 
 def percentile(l, p):
-#{{{
+    # {{{
     l = sorted(l)
     j = int(len(l) * p)
     if j < len(l):
         return l[j]
     return 0
-#}}}
+
+
+# }}}
 
 
 def makeTemporaryFile(directory="/tmp"):
-#{{{
+    # {{{
     import tempfile
 
     fd, p = tempfile.mkstemp(dir=directory)
     os.close(fd)
     return p
-#}}}
+
+
+# }}}
 
 
 class Stopwatch:
-#{{{
+    # {{{
     def __init__(self):
-#{{{
+        # {{{
         self._elapsed = 0.0
         self.running = False
         self._latestStart = None
-#}}}
+
+    # }}}
 
     def start(self):
-#{{{
+        # {{{
         if self.running:
             eprint(
                 "(stopwatch: attempted to start an already running stopwatch. Silently ignoring.)"
@@ -814,10 +945,11 @@ class Stopwatch:
             return
         self.running = True
         self._latestStart = time.time()
-#}}}
+
+    # }}}
 
     def stop(self):
-#{{{
+        # {{{
         if not self.running:
             eprint(
                 "(stopwatch: attempted to stop a stopwatch that is not running. Silently ignoring.)"
@@ -826,66 +958,82 @@ class Stopwatch:
         self.running = False
         self._elapsed += time.time() - self._latestStart
         self._latestStart = None
-#}}}
+
+    # }}}
 
     @property
     def elapsed(self):
-#{{{
+        # {{{
         e = self._elapsed
         if self.running:
             e = e + time.time() - self._latestStart
         return e
-#}}}
 
-#}}}
+
+# }}}
+
+# }}}
+
 
 def userName():
-#{{{
+    # {{{
     import getpass
 
     return getpass.getuser()
-#}}}
+
+
+# }}}
 
 
 def hostname():
-#{{{
+    # {{{
     import socket
 
     return socket.gethostname()
-#}}}
+
+
+# }}}
 
 
 def getPID():
-#{{{
+    # {{{
     return os.getpid()
-#}}}
+
+
+# }}}
 
 
 def CPULoad():
-#{{{
+    # {{{
     try:
         import psutil
     except BaseException:
         return "unknown - install psutil"
     return psutil.cpu_percent()
-#}}}
+
+
+# }}}
 
 
 def flushEverything():
-#{{{
+    # {{{
     sys.stdout.flush()
     sys.stderr.flush()
-#}}}
+
+
+# }}}
 
 
 class RunWithTimeout(Exception):
-#{{{
+    # {{{
     pass
-#}}}
+
+
+# }}}
 
 
 def runWithTimeout(k, timeout):
-#{{{
+    # {{{
     if timeout is None:
         return k()
 
@@ -908,83 +1056,98 @@ def runWithTimeout(k, timeout):
         signal.signal(signal.SIGPROF, lambda *_: None)
         signal.setitimer(signal.ITIMER_PROF, 0)
         raise
-#}}}
+
+
+# }}}
 
 
 def crossProduct(a, b):
-#{{{
+    # {{{
     b = list(b)
     for x in a:
         for y in b:
             yield x, y
-#}}}
+
+
+# }}}
 
 
 class PQ(object):
     """why the fuck does Python not wrap this in a class"""
-#{{{
+
+    # {{{
 
     def __init__(self):
-#{{{
+        # {{{
         self.h = []
         self.index2value = {}
         self.nextIndex = 0
-#}}}
+
+    # }}}
 
     def push(self, priority, v):
-#{{{
+        # {{{
         self.index2value[self.nextIndex] = v
         heapq.heappush(self.h, (-priority, self.nextIndex))
         self.nextIndex += 1
-#}}}
+
+    # }}}
 
     def popMaximum(self):
-#{{{
+        # {{{
         i = heapq.heappop(self.h)[1]
         v = self.index2value[i]
         del self.index2value[i]
         return v
-#}}}
+
+    # }}}
 
     def __iter__(self):
-#{{{
+        # {{{
         for _, v in self.h:
             yield self.index2value[v]
-#}}}
+
+    # }}}
 
     def __len__(self):
-#{{{
+        # {{{
         return len(self.h)
-#}}}
 
-#}}}
+
+# }}}
+
+# }}}
+
 
 class UnionFind:
-#{{{
+    # {{{
     class Class:
         def __init__(self, x):
-#{{{
+            # {{{
             self.members = {x}
             self.leader = None
-#}}}
+
+        # }}}
 
         def chase(self):
-#{{{
+            # {{{
             k = self
             while k.leader is not None:
                 k = k.leader
             self.leader = k
             return k
-#}}}
+
+    # }}}
 
     def __init__(self):
-#{{{
+        # {{{
         # Map from keys to classes
         self.classes = {}
-#}}}
+
+    # }}}
 
     def unify(self, x, y):
-#{{{
+        # {{{
         k1 = self.classes[x].chase()
         k2 = self.classes[y].chase()
         # k2 will be the new leader
@@ -994,41 +1157,52 @@ class UnionFind:
         self.classes[x] = k2
         self.classes[y] = k2
         return k2
-#}}}
+
+    # }}}
 
     def newClass(self, x):
-#{{{
+        # {{{
         if x not in self.classes:
             n = Class(x)
             self.classes[x] = n
-#}}}
+
+    # }}}
 
     def otherMembers(self, x):
-#{{{
+        # {{{
         k = self.classes[x].chase()
         self.classes[x] = k
         return k.members
-#}}}
 
-#}}}
+
+# }}}
+
+# }}}
+
 
 def substringOccurrences(ss, s):
-#{{{
+    # {{{
     return sum(s[i:].startswith(ss) for i in range(len(s)))
-#}}}
+
+
+# }}}
+
 
 def normal(s=1.0, m=0.0):
-#{{{
+    # {{{
     u = random.random()
     v = random.random()
 
     n = math.sqrt(-2.0 * log(u)) * math.cos(2.0 * math.pi * v)
 
     return s * n + m
-#}}}
+
+
+# }}}
+
 
 def powerOfTen(n):
-#{{{
+    # {{{
     if n <= 0:
         return False
     while True:
@@ -1037,10 +1211,13 @@ def powerOfTen(n):
         if n % 10 != 0:
             return False
         n = n / 10
-#}}}
+
+
+# }}}
+
 
 def powerOf(p, n):
-#{{{
+    # {{{
     if n <= 0:
         return False
     while True:
@@ -1049,51 +1226,68 @@ def powerOf(p, n):
         if n % p != 0:
             return False
         n = n / p
-#}}}
+
+
+# }}}
+
 
 def getThisMemoryUsage():
-#{{{
+    # {{{
     import os
     import psutil
 
     process = psutil.Process(os.getpid())
     return process.memory_info().rss
-#}}}
+
+
+# }}}
+
 
 def getMemoryUsageFraction():
-#{{{
+    # {{{
     import psutil
 
     return psutil.virtual_memory().percent
-#}}}
+
+
+# }}}
+
 
 def howManyGigabytesOfMemory():
-#{{{
+    # {{{
     import psutil
 
     return psutil.virtual_memory().total / 10**9
-#}}}
+
+
+# }}}
+
 
 def tuplify(x):
-#{{{
+    # {{{
     if isinstance(x, (list, tuple)):
         return tuple(tuplify(z) for z in x)
     return x
-#}}}
+
+
+# }}}
 
 # image montage!
 def makeNiceArray(l, columns=None):
-#{{{
+    # {{{
     n = columns or int(len(l) ** 0.5)
     a = []
     while l:
         a.append(l[:n])
         l = l[n:]
     return a
-#}}}
+
+
+# }}}
+
 
 def montageMatrix(matrix):
-#{{{
+    # {{{
     import numpy as np
 
     arrays = matrix
@@ -1108,28 +1302,40 @@ def montageMatrix(matrix):
     ]
     arrays = np.concatenate(arrays, axis=0)
     return arrays
-#}}}
+
+
+# }}}
+
 
 def montage(arrays, columns=None):
-#{{{
+    # {{{
     return montageMatrix(makeNiceArray(arrays, columns=columns))
-#}}}
+
+
+# }}}
+
 
 def showArrayAsImage(a):
-#{{{
+    # {{{
     from pylab import imshow, show
 
     imshow(a)
     show()
-#}}}
+
+
+# }}}
+
 
 class ParseFailure(Exception):
-#{{{
+    # {{{
     pass
-#}}}
+
+
+# }}}
+
 
 def parseSExpression(s):
-#{{{
+    # {{{
     s = s.strip()
 
     def p(n):
@@ -1165,11 +1371,18 @@ def parseSExpression(s):
     if n == len(s):
         return e
     raise ParseFailure(s)
-#}}}
+
+
+# }}}
+
 
 def diffuseImagesOutward(
-#{{{
-    imageCoordinates, labelCoordinates, d, maximumRadius=2.5, minimumRadius=1.5
+    # {{{
+    imageCoordinates,
+    labelCoordinates,
+    d,
+    maximumRadius=2.5,
+    minimumRadius=1.5,
 ):
     import numpy as np
 
@@ -1177,20 +1390,22 @@ def diffuseImagesOutward(
     # d = (np.random.rand(n,2)*2 - 1)*(maximumRadius/2 + minimumRadius/2)
 
     def _constrainRadii(p):
-#{{{
+        # {{{
         r = (p * p).sum()
         if r > maximumRadius:
             return maximumRadius * p / (r**0.5)
         if r < minimumRadius:
             return minimumRadius * p / (r**0.5)
         return p
-#}}}
+
+    # }}}
 
     def constrainRadii():
-#{{{
+        # {{{
         for j in range(n):
             d[j, :] = _constrainRadii(d[j, :])
-#}}}
+
+    # }}}
 
     for _ in range(10):
         for i in range(n):
@@ -1209,7 +1424,9 @@ def diffuseImagesOutward(
                 d[i] += force
         constrainRadii()
     return d
-#}}}
+
+
+# }}}
 
 
 if __name__ == "__main__":

@@ -13,21 +13,21 @@ from dreamcoder.utilities import eprint
 
 if __name__ == "__main__":
     sys.setrecursionlimit(10000)
-    
+
     start = time.time()
     request = dill.load(sys.stdin.buffer)
     dt = time.time() - start
     if dt > 1:
         eprint(
             "(compiled driver warning: SLOW) Compiled driver unpacked the message in time",
-            dt)
+            dt,
+        )
 
     response = (False, None)
     try:
         start = time.time()
         f = request["function"]
-        result = f(*request["arguments"],
-                   **request["keywordArguments"])
+        result = f(*request["arguments"], **request["keywordArguments"])
         response = (True, result)
     except Exception as e:
         eprint("Exception thrown in pypy process for %s:" % f.__name__)
@@ -40,4 +40,5 @@ if __name__ == "__main__":
         if dt > 1:
             eprint(
                 "(compiled driver warning: SLOW) Compiled driver packed the message in time",
-                dt)
+                dt,
+            )

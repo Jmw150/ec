@@ -1,4 +1,4 @@
-#TODO: remove wildstar imports
+# TODO: remove wildstar imports
 #      clean up code
 
 import datetime
@@ -17,6 +17,7 @@ from dreamcoder.enumeration import *
 from dreamcoder.fragmentGrammar import *
 from dreamcoder.taskBatcher import *
 from dreamcoder.primitiveGraph import graphPrimitives
+
 # clean up to this point
 from dreamcoder.dreaming import backgroundHelmholtzEnumeration
 
@@ -98,7 +99,7 @@ class ECResult:
     # Linux does not like files that have more than 256 character long names
     # So when exporting the results we abbreviate the parameters
     abbreviations = {
-    #{{{
+        # {{{
         "frontierSize": "fs",
         "useDSL": "DSL",
         "taskReranker": "TRR",
@@ -125,20 +126,22 @@ class ECResult:
         "topkNotMAP": "tknm",
         "rewriteTaskMetrics": "RW",
         "taskBatchSize": "batch",
-    #}}}
+        # }}}
     }
 
     @staticmethod
     def abbreviate(parameter):
-    #{{{
+        # {{{
         return ECResult.abbreviations.get(parameter, parameter)
-    #}}}
+
+    # }}}
 
     @staticmethod
     def parameterOfAbbreviation(abbreviation):
-    #{{{
+        # {{{
         return ECResult.abbreviationToParameter.get(abbreviation, abbreviation)
-    #}}}
+
+    # }}}
 
     @staticmethod
     def clearRecognitionModel(path):
@@ -161,9 +164,12 @@ class ECResult:
         eprint("     Use this one for graphing.")
 
     # }}}
-#}}}
+
+
+# }}}
 
 ECResult.abbreviationToParameter = {v: k for k, v in ECResult.abbreviations.items()}
+
 
 def explorationCompression(*arguments, **keywords):
     # {{{
@@ -171,6 +177,7 @@ def explorationCompression(*arguments, **keywords):
         pass
     return r
     # }}}
+
 
 def ecIterator(
     # {{{
@@ -670,6 +677,7 @@ def ecIterator(
         yield result
     # }}}
 
+
 def showHitMatrix(top, bottom, tasks):
     # {{{
     tasks = set(tasks)
@@ -693,6 +701,7 @@ def showHitMatrix(top, bottom, tasks):
 
 
 # }}}
+
 
 def evaluateOnTestingTasks(
     # {{{
@@ -763,6 +772,7 @@ def evaluateOnTestingTasks(
 
 # }}}
 
+
 def default_wake_generative(
     # {{{
     grammar,
@@ -789,6 +799,7 @@ def default_wake_generative(
 
 
 # }}}
+
 
 def sleep_recognition(
     # {{{
@@ -985,6 +996,7 @@ def sleep_recognition(
 
 # }}}
 
+
 def consolidate(
     # {{{
     result,
@@ -1047,6 +1059,7 @@ def consolidate(
 
 
 # }}}
+
 
 def commandlineArguments(
     # {{{
@@ -1432,6 +1445,7 @@ def commandlineArguments(
 
 # }}}
 
+
 def addTaskMetrics(result, path):
     # {{{
     """Adds a task metrics to ECResults that were pickled without them."""
@@ -1440,6 +1454,7 @@ def addTaskMetrics(result, path):
 
 
 # }}}
+
 
 def addTaskMetrics_(result, path):
     # {{{
@@ -1575,4 +1590,3 @@ def addTaskMetrics_(result, path):
 
 
 # }}}
-

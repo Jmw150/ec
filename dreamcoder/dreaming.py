@@ -16,9 +16,16 @@ from dreamcoder.task import Task
 from dreamcoder.type import arrow, tint
 from dreamcoder.utilities import tuplify, timing, eprint, get_root_dir, mean
 
+
 def helmholtzEnumeration(
-#{{{
-    g, request, inputs, timeout, _=None, special=None, evaluationTimeout=None
+    # {{{
+    g,
+    request,
+    inputs,
+    timeout,
+    _=None,
+    special=None,
+    evaluationTimeout=None,
 ):
     """Returns json (as text)"""
     message = {
@@ -43,11 +50,19 @@ def helmholtzEnumeration(
     except OSError as exc:
         raise exc
     return response
-#}}}
+
+
+# }}}
+
 
 def backgroundHelmholtzEnumeration(
-#{{{
-    tasks, g, timeout, _=None, special=None, evaluationTimeout=None
+    # {{{
+    tasks,
+    g,
+    timeout,
+    _=None,
+    special=None,
+    evaluationTimeout=None,
 ):
     from pathos.multiprocessing import Pool
 
@@ -67,7 +82,7 @@ def backgroundHelmholtzEnumeration(
     ]
 
     def get():
-#{{{
+        # {{{
         results = [p.get() for p in promises]
         frontiers = []
         with timing("(Helmholtz enumeration) Decoded json into frontiers"):
@@ -89,10 +104,13 @@ def backgroundHelmholtzEnumeration(
                     )
         eprint("Total number of Helmholtz frontiers:", len(frontiers))
         return frontiers
-#}}}
+
+    # }}}
 
     return get
-#}}}
+
+
+# }}}
 
 
 if __name__ == "__main__":

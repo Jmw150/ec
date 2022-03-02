@@ -15,7 +15,7 @@ from dreamcoder.vs import induceGrammar_Beta
 
 
 def induceGrammar(*args, **kwargs):
-#{{{
+    # {{{
     if sum(not f.empty for f in args[1]) == 0:
         eprint("No nonempty frontiers, exiting grammar induction early.")
         return args[0], args[1]
@@ -73,10 +73,13 @@ def induceGrammar(*args, **kwargs):
         ]
 
     return g, newFrontiers
-#}}}
+
+
+# }}}
+
 
 def memorizeInduce(g, frontiers, **kwargs):
-#{{{
+    # {{{
     existingInventions = {p.uncurry() for p in g.primitives}
     programs = {f.bestPosterior.program for f in frontiers if not f.empty}
     newInventions = programs - existingInventions
@@ -86,12 +89,13 @@ def memorizeInduce(g, frontiers, **kwargs):
 
     # rewrite in terms of new primitives
     def substitute(p):
-#{{{
+        # {{{
         nonlocal newInventions
         if p in newInventions:
             return Invented(p).uncurry()
         return p
-#}}}
+
+    # }}}
 
     newFrontiers = [
         Frontier(
@@ -109,16 +113,22 @@ def memorizeInduce(g, frontiers, **kwargs):
         for f in frontiers
     ]
     return newGrammar, newFrontiers
-#}}}
+
+
+# }}}
+
 
 def pypyInduce(*args, **kwargs):
-#{{{
+    # {{{
     kwargs.pop("iteration")
     return FragmentGrammar.induceFromFrontiers(*args, **kwargs)
-#}}}
+
+
+# }}}
+
 
 def ocamlInduce(
-#{{{
+    # {{{
     g,
     frontiers,
     _=None,
@@ -222,10 +232,13 @@ def ocamlInduce(
         else:
             eprint("Finished consolidation.")
             return g, frontiers
-#}}}
+
+
+# }}}
+
 
 def rustInduce(
-#{{{
+    # {{{
     g0,
     frontiers,
     _=None,
@@ -240,9 +253,10 @@ def rustInduce(
     vs=False,
 ):
     def finite_logp(l):
-#{{{
+        # {{{
         return l if l != float("-inf") else -1000
-#}}}
+
+    # }}}
 
     message = {
         "strategy": {"version-spaces": {"top_i": 50}}
@@ -354,4 +368,6 @@ def rustInduce(
         for f, r in zip(frontiers, resp["frontiers"])
     ]
     return g, newFrontiers
-#}}}
+
+
+# }}}
