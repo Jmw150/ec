@@ -35,9 +35,10 @@ let rec fatree_lookup size tree index =
   | FANode (x, t1, t2), 0 -> x
   | FANode (x, t1, t2), i ->
       let size' = size / 2 in
-      if i <= size'
-      then fatree_lookup size' t1 (i - 1)
-      else fatree_lookup size' t2 (i - 1 - size')
+      if i <= size' then
+        fatree_lookup size' t1 (i - 1)
+      else
+        fatree_lookup size' t2 (i - 1 - size')
 
 let rec fatree_update size tree index y =
   match (tree, index) with
@@ -46,23 +47,28 @@ let rec fatree_update size tree index y =
   | FANode (x, t1, t2), 0 -> FANode (y, t1, t2)
   | FANode (x, t1, t2), i ->
       let size' = size / 2 in
-      if i <= size'
-      then FANode (x, fatree_update size' t1 (i - 1) y, t2)
-      else FANode (x, t1, fatree_update size' t2 (i - 1 - size') y)
+      if i <= size' then
+        FANode (x, fatree_update size' t1 (i - 1) y, t2)
+      else
+        FANode (x, t1, fatree_update size' t2 (i - 1 - size') y)
 
 let rec lookup ls i =
   match (ls, i) with
   | [], i -> raise Subscript
   | (size, t) :: rest, i ->
-      if i < size then fatree_lookup size t i else lookup rest (i - size)
+      if i < size then
+        fatree_lookup size t i
+      else
+        lookup rest (i - size)
 
 let rec update ls i y =
   match (ls, i) with
   | [], i -> raise Subscript
   | (size, t) :: rest, i ->
-      if i < size
-      then (size, fatree_update size t i y) :: rest
-      else (size, t) :: update rest (i - size) y
+      if i < size then
+        (size, fatree_update size t i y) :: rest
+      else
+        (size, t) :: update rest (i - size) y
 
 let empty = []
 
@@ -74,9 +80,10 @@ let isempty ls =
 let cons x ls =
   match ls with
   | (size1, t1) :: (size2, t2) :: rest ->
-      if size1 = size2
-      then (1 + size1 + size2, FANode (x, t1, t2)) :: rest
-      else (1, FALeaf x) :: ls
+      if size1 = size2 then
+        (1 + size1 + size2, FANode (x, t1, t2)) :: rest
+      else
+        (1, FALeaf x) :: ls
   | xls -> (1, FALeaf x) :: xls
 
 let head ls =

@@ -49,7 +49,10 @@ let load_problems channel =
             | _ -> (
                 try
                   let v = x |> to_string in
-                  if String.length v = 1 then magical v.[0] else magical v
+                  if String.length v = 1 then
+                    magical v.[0]
+                  else
+                    magical v
                 with
                 | _ -> (
                     try x |> to_list |> List.map ~f:unpack |> magical with

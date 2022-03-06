@@ -96,9 +96,10 @@ let likelihood_under_sfg (g : sfg) (request : tp) (expression : program) :
       |> List.filter_mapi ~f:(fun i (p, t, ll) ->
              try
                let t, context =
-                 if not (is_fragment_index p)
-                 then instantiate_type context t
-                 else (t, context)
+                 if not (is_fragment_index p) then
+                   instantiate_type context t
+                 else
+                   (t, context)
                in
                let _, return_type = arguments_and_return_of_type t in
                let newContext = unify context return_type request in
@@ -151,14 +152,14 @@ let likelihood_under_sfg (g : sfg) (request : tp) (expression : program) :
                      let context, fragment_type, holes, bindings =
                        match f with
                        | Index i ->
-                           if FIndex i = candidate
-                           then
+                           if FIndex i = candidate then
                              ( context,
                                List.nth_exn environment i,
                                [],
                                FreeMap.empty
                              )
-                           else raise FragmentFail
+                           else
+                             raise FragmentFail
                        | _ -> bind_fragment context environment candidate f
                      in
 
@@ -197,8 +198,8 @@ let likelihood_under_sfg (g : sfg) (request : tp) (expression : program) :
                        Printf.printf "arguments: %s\n"
                          (arguments |> List.map ~f:string_of_program |> join) ;
                        assert false
-                     )
-                     else () ;
+                     ) else
+                       () ;
 
                      (* treat the holes and the bindings as though they were arguments *)
                      let arguments =

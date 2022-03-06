@@ -79,7 +79,10 @@ let print_row my_array hero_dir =
 let print_matrix the_matrix hero_dir =
   print_string "[|\n" ;
   for i = 0 to Array.length the_matrix - 1 do
-    if not (phys_equal i 0) then print_string "\n" else () ;
+    if not (phys_equal i 0) then
+      print_string "\n"
+    else
+      () ;
     print_row the_matrix.(i) hero_dir
   done ;
   print_string "|]\n"
@@ -105,21 +108,26 @@ let rec set value game = function
 
 let remove_hero game =
   let cell = game.board.(game.hero.x).(game.hero.y) in
-  if cell = Hero_and_Marker
-  then game.board.(game.hero.x).(game.hero.y) <- Marker
-  else game.board.(game.hero.x).(game.hero.y) <- Empty
+  if cell = Hero_and_Marker then
+    game.board.(game.hero.x).(game.hero.y) <- Marker
+  else
+    game.board.(game.hero.x).(game.hero.y) <- Empty
 
 let set_hero game =
   let cell = game.board.(game.hero.x).(game.hero.y) in
-  if cell = Marker
-  then game.board.(game.hero.x).(game.hero.y) <- Hero_and_Marker
-  else game.board.(game.hero.x).(game.hero.y) <- Hero
+  if cell = Marker then
+    game.board.(game.hero.x).(game.hero.y) <- Hero_and_Marker
+  else
+    game.board.(game.hero.x).(game.hero.y) <- Hero
 
 let invariant game =
-  if game.board.(game.hero.x).(game.hero.y) = Hero
-     || game.board.(game.hero.x).(game.hero.y) = Hero_and_Marker
-  then true
-  else false
+  if
+    game.board.(game.hero.x).(game.hero.y) = Hero
+    || game.board.(game.hero.x).(game.hero.y) = Hero_and_Marker
+  then
+    true
+  else
+    false
 
 let move_forward game =
   assert (invariant game) ;
@@ -137,9 +145,10 @@ let pick_marker game =
   assert (invariant game) ;
   let board = game.board in
   let hero = game.hero in
-  if board.(hero.x).(hero.y) = Hero_and_Marker
-  then game.board.(hero.x).(hero.y) <- Hero
-  else ()
+  if board.(hero.x).(hero.y) = Hero_and_Marker then
+    game.board.(hero.x).(hero.y) <- Hero
+  else
+    ()
 
 let turn_left game =
   assert (invariant game) ;

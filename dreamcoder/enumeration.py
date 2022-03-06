@@ -75,7 +75,7 @@ def multicoreEnumeration(
     )
     if disableParallelism:
         eprint("Disabling parallelism on the Python side because we only have one job.")
-        eprint("If you are using ocaml, there could still be parallelism.")
+        eprint("If you are using ocaml, there could still be parallelism.") # hmmm...
 
     # Map from task to the shortest time to find a program solving it
     bestSearchTime = {t: None for t in task2grammar}
@@ -162,6 +162,7 @@ def multicoreEnumeration(
     nextID = 0
 
     while True:
+#{{{
         # {{{
         refreshJobs()
         # Don't launch a job that we are already working on
@@ -266,6 +267,7 @@ def multicoreEnumeration(
         else:
             eprint("Unknown message result:", message.result)
             assert False
+#}}}
 
     eprint(
         "We enumerated this many programs, for each task:\n\t",
@@ -351,6 +353,7 @@ def solveForTask_ocaml(
     # }}}
 
     message = {
+#{{{
         "DSL": g.json(),
         "tasks": [taskMessage(t) for t in tasks],
         "programTimeout": evaluationTimeout,
@@ -361,13 +364,14 @@ def solveForTask_ocaml(
         "budgetIncrement": budgetIncrement,
         "verbose": False,
         "shatter": 5 if len(tasks) == 1 and "turtle" in str(tasks[0].request) else 10,
+#}}}
     }
 
     if hasattr(tasks[0], "maxParameters") and tasks[0].maxParameters is not None:
         message["maxParameters"] = tasks[0].maxParameters
 
-    message = json.dumps(message)
     # uncomment this if you want to save the messages being sent to the solver
+    message = json.dumps(message)
 
     try:
         solver_file = os.path.join(get_root_dir(), "solver")
@@ -422,7 +426,6 @@ def solveForTask_ocaml(
             )
 
     return frontiers, searchTimes, pc
-
 
 # }}}
 

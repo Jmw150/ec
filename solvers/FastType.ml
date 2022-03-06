@@ -31,7 +31,14 @@ let make_fast t =
   let rec make = function
     | TID j -> FastVariable (Array.get mapping j)
     | TCon (n, xs, p) as t ->
-        FastConstructor (n, xs |> List.map ~f:make, if p then None else Some t)
+        FastConstructor
+          ( n,
+            xs |> List.map ~f:make,
+            if p then
+              None
+            else
+              Some t
+          )
   in
   (make t, mapping)
 
@@ -64,9 +71,10 @@ let compile_unifier t =
         | Some t' -> unify k t t'
       )
     | FastConstructor (n, fs, _), TCon (n', ss, _) ->
-        if n = n'
-        then List.fold2_exn ~init:k ~f:(fun k f s -> fu f s k) fs ss
-        else raise UnificationFailure
+        if n = n' then
+          List.fold2_exn ~init:k ~f:(fun k f s -> fu f s k) fs ss
+        else
+          raise UnificationFailure
     | FastConstructor (_, _, Some t'), TID j -> bindTID j t' k
     | FastConstructor (_, [], None), _ ->
         assert false (* should be impossible *)

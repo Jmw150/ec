@@ -17,8 +17,7 @@ let save ?(image = false) p c name cost =
   Printf.fprintf oc_w "%d\n" cost ;
   close_out oc ;
   close_out oc_w ;
-  if image
-  then (
+  if image then (
     let fname = Printf.sprintf "%s/%s.png" base name in
     output_canvas_png c 16 fname ;
     let fname = Printf.sprintf "%s/%s_HIGH.png" base name in
@@ -37,8 +36,8 @@ let () =
       let l = Plumbing.canvas_to_tlist c in
       try
         let c', name = Hashtbl.find generated l in
-        if c' < cost
-        then ()
+        if c' < cost then
+          ()
         else (
           Hashtbl.replace generated l (cost, name) ;
           save p c name cost

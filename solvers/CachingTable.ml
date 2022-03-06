@@ -64,8 +64,8 @@ module CachingTable = struct
         m.newest_key <- Some n
 
   let collect m =
-    if Hashtbl.length m.mapping <= m.capacity
-    then ()
+    if Hashtbl.length m.mapping <= m.capacity then
+      ()
     else
       match m.oldest_key with
       | None -> assert false
@@ -176,12 +176,11 @@ module CachingTable = struct
           1
           = (entries
             |> List.filter ~f:(fun entry' ->
-                   if entry' == entry
-                   then (
+                   if entry' == entry then (
                      assert (entry'.node_key == key) ;
                      true
-                   )
-                   else false
+                   ) else
+                     false
                )
             |> List.length
             )

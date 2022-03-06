@@ -21,8 +21,8 @@ let rec exploration_compression
     ?((* beta: coefficient of AIC penalty *)
       beta = 1.)
     (iterations : int) : grammar =
-  if iterations = 0
-  then g
+  if iterations = 0 then
+    g
   else
     let frontiers =
       enumerate_solutions_for_tasks g tasks frontier_size ~keepTheBest

@@ -1,3 +1,6 @@
+# Entry point into the list domain for dreamcoder. Just contains default arguments
+
+# This is used for backwards compatibility with old EC that used batch training on multiple files
 try:
     import binutil  # required to import from dreamcoder modules
 except ModuleNotFoundError:
@@ -5,7 +8,7 @@ except ModuleNotFoundError:
 
 from dreamcoder.domains.list.main import main, list_options
 from dreamcoder.dreamcoder import commandlineArguments
-from dreamcoder.utilities import numberOfCPUs
+from dreamcoder.utilities import numberOfCPUs # detecting the number of CPUs
 
 
 if __name__ == "__main__":

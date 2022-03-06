@@ -36,8 +36,7 @@ let parallel_do nc actions =
 
 (* paralleled map *)
 let pmap ?(processes = 4) ?(bsize = 0) f input output =
-  if processes = 0
-  then (
+  if processes = 0 then (
     Printf.printf "WARNING: processes = 0\n" ;
     Out_channel.flush stdout
   ) ;
@@ -117,12 +116,10 @@ let parallel_map ~nc l ~f =
   Array.to_list output_array |> List.map ~f:(safe_get_some "parallel_map")
 
 let parallel_work ~nc ?(chunk = 0) ~final actions =
-  if nc = 1
-  then (
+  if nc = 1 then (
     actions |> List.iter ~f:(fun a -> a ()) ;
     [ final () ]
-  )
-  else
+  ) else
     let chunk =
       match chunk with
       | 0 -> List.length actions / nc

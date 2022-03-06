@@ -1,3 +1,6 @@
+# import libraries
+#{{{
+# a hack for backwards compatibility
 try:
     import binutil  # required to import from dreamcoder modules
 except ModuleNotFoundError:
@@ -73,6 +76,14 @@ from dreamcoder.likelihoodModel import add_string_constants
 from dreamcoder.domains.regex.regexPrimitives import reducedConcatPrimitives
 import dreamcoder.domains.regex.main as Regex
 
+# from scipy.misc import imresize # deprecated
+from PIL import Image
+import numpy as np
+from dreamcoder.utilities import ParseFailure, lse
+
+# import other stuff
+#}}}
+
 Regex.ConstantInstantiateVisitor.SINGLE = Regex.ConstantInstantiateVisitor()
 Text.ConstantInstantiateVisitor.SINGLE = Text.ConstantInstantiateVisitor(
     list(
@@ -90,24 +101,13 @@ Text.ConstantInstantiateVisitor.SINGLE = Text.ConstantInstantiateVisitor(
     )
 )
 
-# from scipy.misc import imresize # deprecated
-from PIL import Image
-
 
 def imresize(data, size):
     return np.array(
         Image.fromarray(data).resize(size=size, resample=Image.BICUBIC).getdata()
     ).reshape(size)
 
-
-import numpy as np
-
-from dreamcoder.utilities import ParseFailure, lse
-
-# import other stuff
-
 extras = ["(", ")", "lambda"] + ["$" + str(i) for i in range(10)]
-
 
 def stringify(line):
     lst = []
@@ -206,6 +206,7 @@ def test_task(m, task, timeout):
             if p not in failed_cands:
                 if "STRING" in str(p):
                     assert arguments.domain == "text"
+#{{{
                     if len(task.stringConstants) == 0:
                         ll = float("-inf")
                     else:
@@ -220,7 +221,9 @@ def test_task(m, task, timeout):
                             )
                             for pp in p.visit(ci)
                         )
+#}}}
                 if arguments.domain == "regex":
+#{{{
                     # regex is handled specially
                     # we just collect all of the candidates and then marginalize over them
                     # but we have to make sure that each candidate is well typed and well formed
@@ -256,6 +259,7 @@ def test_task(m, task, timeout):
                         except:
                             p = None
 
+#}}}
                 elif arguments.domain != "logo":
                     ll = task.logLikelihood(
                         p, timeout=0.1 if arguments.domain != "rational" else None

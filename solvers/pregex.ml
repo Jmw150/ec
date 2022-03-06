@@ -95,7 +95,10 @@ let rec canonical_regex r =
       canonical_regex (Concat (b, Kleene b))
   | Kleene b ->
       let b = canonical_regex b in
-      if b = empty_regex then empty_regex else Kleene b
+      if b = empty_regex then
+        empty_regex
+      else
+        Kleene b
   | Maybe b -> Alt (empty_regex, b) |> canonical_regex
   (* associative rules *)
   | Concat (Concat (a, b), c) -> canonical_regex (Concat (a, Concat (b, c)))
@@ -103,7 +106,12 @@ let rec canonical_regex r =
   | Concat (a, b) ->
       let a = canonical_regex a in
       let b = canonical_regex b in
-      if a = empty_regex then b else if b = empty_regex then a else Concat (a, b)
+      if a = empty_regex then
+        b
+      else if b = empty_regex then
+        a
+      else
+        Concat (a, b)
   | Alt (a, b) -> (
       let a = canonical_regex a in
       let b = canonical_regex b in
@@ -122,8 +130,7 @@ type match_state = {
 let rec match_regex random (state : match_state) r return =
   match r with
   | Constant (String s) ->
-      if List.take state.match_target (List.length s) = s
-      then
+      if List.take state.match_target (List.length s) = s then
         return
           {
             state with
@@ -184,8 +191,7 @@ let match_regex regex s =
   | _ -> log 0.
 ;;
 
-if false
-then (
+if false then (
   Printf.eprintf "%f\n"
     (match_regex
        (Concat (Kleene (Alt (Constant D, Constant S)), Constant (String [])))
@@ -202,7 +208,11 @@ let rec try_remove_prefix prefix str =
   match (prefix, str) with
   | [], l -> Some l
   | _, [] -> None
-  | ph :: pt, sh :: st -> if ph = sh then try_remove_prefix pt st else None
+  | ph :: pt, sh :: st ->
+      if ph = sh then
+        try_remove_prefix pt st
+      else
+        None
 
 let consumeConst c char_list =
   match char_list with
@@ -222,12 +232,12 @@ let consumeConst c char_list =
         )
       | _ ->
           let character_class = get_character_class c in
-          if List.mem ~equal:( = ) character_class hd
-          then
+          if List.mem ~equal:( = ) character_class hd then
             [
               ((None, tl), -.log (List.length character_class |> Float.of_int));
             ]
-          else []
+          else
+            []
     )
 
 let f_kleene a partial =
@@ -291,8 +301,7 @@ let preg_match preg str =
   let consume_loop (cont_old, score_old) =
     consume cont_old
     |> List.iter ~f:(fun (cont, score) ->
-           if not (Hash_set.mem visited cont)
-           then (
+           if not (Hash_set.mem visited cont) then (
              Hash_set.add visited cont ;
              let newscore = score +. score_old in
              match cont with
@@ -450,7 +459,10 @@ register_special_task "regex"
     let const =
       try
         let k = extra |> member "str_const" |> to_string |> String.to_list in
-        if List.length k > 0 then Some k else None
+        if List.length k > 0 then
+          Some k
+        else
+          None
       with
       | _ -> None
     in
@@ -467,7 +479,8 @@ register_special_task "regex"
     let log_likelihood expression =
       let number_of_constants = number_of_free_parameters expression in
       if number_of_constants > 1 || (number_of_constants = 1 && is_none const)
-      then log 0.
+      then
+        log 0.
       else
         let expression =
           match const with
@@ -482,9 +495,10 @@ register_special_task "regex"
                 | [] -> 0.
                 | e :: es ->
                     let this_score = preg_match r e in
-                    if is_invalid this_score
-                    then log 0.
-                    else this_score +. loop es
+                    if is_invalid this_score then
+                      log 0.
+                    else
+                      this_score +. loop es
               in
               loop observations
           )
@@ -495,9 +509,10 @@ register_special_task "regex"
             match cutoff_option with
             | None -> l
             | Some cutoff ->
-                if l >= cutoff
-                then l -. (Float.of_int number_of_constants *. const_cost)
-                else log 0.
+                if l >= cutoff then
+                  l -. (Float.of_int number_of_constants *. const_cost)
+                else
+                  log 0.
           )
     in
 

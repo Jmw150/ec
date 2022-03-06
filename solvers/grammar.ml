@@ -31,13 +31,14 @@ let primitive_grammar ?(continuation_type = None) primitives =
 exception DuplicatePrimitive
 
 let uniform_grammar ?(continuation_type = None) primitives =
-  if List.length primitives
-     = List.length
-         (List.dedup_and_sort ~compare:compare_program
-            (* (fun p1 p2 -> String.compare (string_of_program p1) *)
-            (*     (string_of_program p2)) *)
-            primitives
-         )
+  if
+    List.length primitives
+    = List.length
+        (List.dedup_and_sort ~compare:compare_program
+           (* (fun p1 p2 -> String.compare (string_of_program p1) *)
+           (*     (string_of_program p2)) *)
+           primitives
+        )
   then
     {
       library =
@@ -54,7 +55,8 @@ let uniform_grammar ?(continuation_type = None) primitives =
       logVariable = log 0.5;
       continuation_type;
     }
-  else raise DuplicatePrimitive
+  else
+    raise DuplicatePrimitive
 
 let strip_grammar { logVariable; continuation_type; library } =
   {
@@ -85,13 +87,16 @@ let string_of_grammar g =
       )
 
 let grammar_log_weight g p =
-  if is_index p
-  then g.logVariable
+  if is_index p then
+    g.logVariable
   else
     match
       g.library
       |> List.filter_map ~f:(fun (p', _, l, _) ->
-             if program_equal p p' then Some l else None
+             if program_equal p p' then
+               Some l
+             else
+               None
          )
     with
     | [ l ] -> l
@@ -128,15 +133,15 @@ let unifying_expressions g environment request context :
     |> List.filter_map ~f:(fun (p, t, ll) ->
            let context, t = applyContext context t in
            let return = return_of_type t in
-           if might_unify return request
-           then
+           if might_unify return request then
              try
                let context = unify context return request in
                let context, t = applyContext context t in
                Some (p, arguments_of_type t, context, ll)
              with
              | UnificationFailure -> None
-           else None
+           else
+             None
        )
   in
   let variable_candidates =
@@ -144,11 +149,14 @@ let unifying_expressions g environment request context :
     | _ :: _, Some t when t = request ->
         let terminal_indices =
           List.filter_map variable_candidates ~f:(fun (p, t, _, _) ->
-              if t = [] then Some (get_index_value p) else None
+              if t = [] then
+                Some (get_index_value p)
+              else
+                None
           )
         in
-        if terminal_indices = []
-        then variable_candidates
+        if terminal_indices = [] then
+          variable_candidates
         else
           let smallest_terminal_index = fold1 min terminal_indices in
           variable_candidates
@@ -178,8 +186,8 @@ let unifying_expressions g environment request context :
     |> List.filter_map ~f:(fun (p, t, ll, u) ->
            try
              let return_type = return_of_type t in
-             if not (might_unify return_type request)
-             then None
+             if not (might_unify return_type request) then
+               None
              else
                let context, arguments = u context request in
                Some (p, arguments, context, ll)
@@ -248,22 +256,30 @@ let mix_summaries weighted_summaries =
 
 let record_likelihood_event likelihood_summary actual possibles =
   let constant =
-    if is_index actual
-    then
+    if is_index actual then
       -.(possibles
         |> List.filter ~f:is_index
         |> List.length
         |> Float.of_int
         |> log
         )
-    else 0.
+    else
+      0.
   in
 
-  let actual = if is_index actual then Index 0 else actual in
+  let actual =
+    if is_index actual then
+      Index 0
+    else
+      actual
+  in
   let variable_possible = possibles |> List.exists ~f:is_index in
   let possibles = possibles |> List.filter ~f:(compose not is_index) in
   let possibles =
-    if variable_possible then Index 0 :: possibles else possibles
+    if variable_possible then
+      Index 0 :: possibles
+    else
+      possibles
   in
   let possibles = possibles |> List.dedup_and_sort ~compare:compare_program in
 

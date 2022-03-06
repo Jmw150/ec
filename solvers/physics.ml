@@ -123,13 +123,14 @@ register_special_task "physics" (fun extra ?(timeout = 0.01) name request _ ->
     in
 
     let unpack t =
-      if t = tvector
-      then unpack_vector
-      else if t = tobject
-      then unpack_object
-      else if t = treal
-      then unpack_real
-      else assert false
+      if t = tvector then
+        unpack_vector
+      else if t = tobject then
+        unpack_object
+      else if t = treal then
+        unpack_real
+      else
+        assert false
     in
 
     let arguments, return = arguments_and_return_of_type request in
@@ -190,7 +191,12 @@ register_special_task "physics" (fun extra ?(timeout = 0.01) name request _ ->
               let average_loss =
                 restarting_optimize (rprop ~lr ~decay ~grow) ~attempts:restarts
                   ~update:0
-                  ~iterations:(if List.length parameters = 0 then 0 else steps)
+                  ~iterations:
+                    ( if List.length parameters = 0 then
+                      0
+                    else
+                      steps
+                    )
                   parameters average_loss
               in
               match lossThreshold with
@@ -199,11 +205,14 @@ register_special_task "physics" (fun extra ?(timeout = 0.01) name request _ ->
                   -. (d *. parameterPenalty)
                   -. (n *. average_loss /. temperature)
               | Some t ->
-                  if List.for_all l ~f:(fun { data = Some this_loss } ->
-                         this_loss < t
-                     )
-                  then 0. -. (d *. parameterPenalty)
-                  else log 0.
+                  if
+                    List.for_all l ~f:(fun { data = Some this_loss } ->
+                        this_loss < t
+                    )
+                  then
+                    0. -. (d *. parameterPenalty)
+                  else
+                    log 0.
             )
         );
     }

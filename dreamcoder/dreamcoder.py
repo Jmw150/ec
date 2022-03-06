@@ -1,9 +1,10 @@
 # TODO: remove wildstar imports
-#      clean up code
+#       clean up code
+#       document...
 
 import datetime
 
-import dill
+import dill # because it is a pickling (file compression) library
 
 from dreamcoder.compression import induceGrammar
 from dreamcoder.utilities import *
@@ -18,7 +19,6 @@ from dreamcoder.fragmentGrammar import *
 from dreamcoder.taskBatcher import *
 from dreamcoder.primitiveGraph import graphPrimitives
 
-# clean up to this point
 from dreamcoder.dreaming import backgroundHelmholtzEnumeration
 
 
@@ -178,9 +178,11 @@ def explorationCompression(*arguments, **keywords):
     return r
     # }}}
 
-
+# NOTE: main program?, at least from bin/list.py
 def ecIterator(
     # {{{
+    # inputs
+#{{{
     grammar,
     tasks,
     _=None,
@@ -228,6 +230,10 @@ def ecIterator(
     auxiliaryLoss=False,
     custom_wake_generative=None,
 ):
+#}}}
+  
+    # runtime type check
+#{{{
     if enumerationTimeout is None:
         eprint(
             "Please specify an enumeration timeout:",
@@ -270,7 +276,10 @@ def ecIterator(
             "You specified a testingTimeout, but did not provide any held out testing tasks, aborting."
         )
         assert False
+#}}}
 
+    # collect parameters setting in one place, for logging tests
+#{{{
     # We save the parameters that were passed into EC
     # This is for the purpose of exporting the results of the experiment
     parameters = {
@@ -331,6 +340,7 @@ def ecIterator(
             del parameters[k]
     else:
         del parameters["useDSL"]
+#}}}
 
     # Uses `parameters` to construct the checkpoint path
     def checkpointPath(iteration, extra=""):
@@ -341,11 +351,11 @@ def ecIterator(
             for k in sorted(parameters.keys())
         ]
         return "{}_{}{}.pickle".format(outputPrefix, "_".join(kvs), extra)
-
     # }}}
 
     if message:
         message = " (" + message + ")"
+
     eprint(
         "Running EC%s on %s @ %s with %d CPUs and parameters:"
         % (message, os.uname()[1], datetime.datetime.now(), CPUs)
@@ -360,9 +370,12 @@ def ecIterator(
         assert resume is not None, "--addFullTaskMetrics requires --resume"
 
     def reportMemory():
+#{{{
         eprint(f"Currently using this much memory: {getThisMemoryUsage()}")
+#}}}
 
     # Restore checkpoint
+#{{{
     if resume is not None:
         try:
             resume = int(resume)
@@ -386,8 +399,10 @@ def ecIterator(
             numTestingTasks=numTestingTasks,
             allFrontiers={t: Frontier([], task=t) for t in tasks},
         )
+#}}}
 
     # Set up the task batcher.
+#{{{
     if taskReranker == "default":
         taskBatcher = DefaultTaskBatcher()
     elif taskReranker == "random":
@@ -407,8 +422,10 @@ def ecIterator(
     else:
         eprint("Invalid task reranker: " + taskReranker + ", aborting.")
         assert False
+#}}}
 
     # Check if we are just updating the full task metrics
+#{{{
     if addFullTaskMetrics:
         if testingTimeout is not None and testingTimeout > enumerationTimeout:
             enumerationTimeout = testingTimeout
@@ -490,15 +507,24 @@ def ecIterator(
             ECResult.clearRecognitionModel(path)
 
         sys.exit(0)
+#}}}
 
+    # main loop of the system
     for j in range(resume or 0, iterations):
+
+        # Reset task metrics, if user asked
+#{{{
         if storeTaskMetrics and rewriteTaskMetrics:
             eprint("Resetting task metrics for next iteration.")
             result.recognitionTaskMetrics = {}
+#}}}
 
         reportMemory()
 
-        # Evaluate on held out tasks if we have them
+        # Sleep - DREAM? 
+
+        # Evaluate on held out tasks, if we have them
+#{{{
         if testingTimeout > 0 and ((j % testEvery == 0) or (j == iterations - 1)):
             eprint("Evaluating on held out testing tasks for iteration: %d" % (j))
             evaluateOnTestingTasks(
@@ -511,15 +537,18 @@ def ecIterator(
                 enumerationTimeout=testingTimeout,
                 evaluationTimeout=evaluationTimeout,
             )
+#}}}
+
         # If we have to also enumerate Helmholtz frontiers,
         # do this extra sneaky in the background
+#{{{
         if (
             useRecognitionModel
             and biasOptimal
             and helmholtzRatio > 0
             and all(str(p) != "REAL" for p in grammar.primitives)
         ):  # real numbers don't support this
-            # the DSL is fixed, so the dreams are also fixed. don't recompute them.
+            # the DSL is fixed, so the dreams are also fixed. Don't recompute them.
             if useDSL or "helmholtzFrontiers" not in locals():
                 helmholtzFrontiers = backgroundHelmholtzEnumeration(
                     tasks,
@@ -532,14 +561,20 @@ def ecIterator(
                 print("Reusing dreams from previous iteration.")
         else:
             helmholtzFrontiers = lambda: []
+#}}}
 
         reportMemory()
 
         # Get waking task batch.
+#{{{
         wakingTaskBatch = taskBatcher.getTaskBatch(result, tasks, taskBatchSize, j)
+#}}}
         eprint("Using a waking task batch of size: " + str(len(wakingTaskBatch)))
 
         # WAKING UP
+#{{{
+        # useSDL flag -> wake code generation
+#{{{
         if useDSL:
             wake_generative = (
                 custom_wake_generative
@@ -563,6 +598,7 @@ def ecIterator(
                 "Skipping top-down enumeration because we are not using the generative model"
             )
             topDownFrontiers, times = [], {t: None for t in wakingTaskBatch}
+#}}}
 
         tasksHitTopDown = {f.task for f in topDownFrontiers if not f.empty}
         result.hitsAtEachWake.append(len(tasksHitTopDown))
@@ -570,6 +606,7 @@ def ecIterator(
         reportMemory()
 
         # Combine topDownFrontiers from this task batch with all frontiers.
+#{{{
         for f in topDownFrontiers:
             if f.task not in result.allFrontiers:
                 continue  # backward compatibility with old checkpoints
@@ -582,8 +619,10 @@ def ecIterator(
             "Total frontiers: "
             + str(len([f for f in result.allFrontiers.values() if not f.empty]))
         )
+#}}}
 
         # Train + use recognition model
+#{{{
         if useRecognitionModel:
             # Should we initialize the weights to be what they were before?
             previousRecognitionModel = None
@@ -624,8 +663,10 @@ def ecIterator(
             )
 
             showHitMatrix(tasksHitTopDown, tasksHitBottomUp, wakingTaskBatch)
+#}}}
 
         # Record the new topK solutions
+#{{{
         result.taskSolutions = {
             f.task: f.topK(topK) for f in result.allFrontiers.values()
         }
@@ -639,8 +680,11 @@ def ecIterator(
             {f.task: f for f in result.allFrontiers.values() if len(f) > 0},
             "frontier",
         )
+#}}}
+#}}}
 
         # Sleep-G
+#{{{
         if useDSL and not (noConsolidation):
             eprint(f"Currently using this much memory: {getThisMemoryUsage()}")
             grammar = consolidate(
@@ -659,7 +703,10 @@ def ecIterator(
         else:
             eprint("Skipping consolidation.")
             result.grammars.append(grammar)
+#}}}
 
+        # pickle model, print out PDFs of productions
+#{{{
         if outputPrefix is not None:
             path = checkpointPath(j + 1)
             with open(path, "wb") as handle:
@@ -672,7 +719,9 @@ def ecIterator(
             if useRecognitionModel:
                 ECResult.clearRecognitionModel(path)
 
+            # This is about printing pictures of lambda graphs to a file, for each
             graphPrimitives(result, "%s_primitives_%d_" % (outputPrefix, j))
+#}}}
 
         yield result
     # }}}
@@ -716,6 +765,7 @@ def evaluateOnTestingTasks(
     evaluationTimeout=None,
 ):
     if result.recognitionModel is not None:
+#{{{
         recognizer = result.recognitionModel
         testingFrontiers, times = recognizer.enumerateFrontiers(
             testingTasks,
@@ -741,7 +791,9 @@ def evaluateOnTestingTasks(
             recognizer.taskGrammarEntropies(testingTasks),
             "heldoutTaskGrammarEntropies",
         )
+#}}}
     else:
+#{{{
         testingFrontiers, times = multicoreEnumeration(
             grammar,
             testingTasks,
@@ -752,6 +804,7 @@ def evaluateOnTestingTasks(
             evaluationTimeout=evaluationTimeout,
             testing=True,
         )
+#}}}
     updateTaskSummaryMetrics(
         result.recognitionTaskMetrics, times, "heldoutTestingTimes"
     )

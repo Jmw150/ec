@@ -59,8 +59,8 @@ let output_job ?(maxExamples = 50000) result =
   (* let result = Hashtbl.to_alist result in *)
   let results =
     let l = List.length result in
-    if l < maxExamples
-    then result
+    if l < maxExamples then
+      result
     else
       let p = (maxExamples |> Float.of_int) /. (l |> Float.of_int) in
       result |> List.filter ~f:(fun _ -> Random.float 1. < p)

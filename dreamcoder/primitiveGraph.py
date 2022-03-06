@@ -1,9 +1,11 @@
 from dreamcoder.program import *
 
-
+# ?
 def graphPrimitives(result, prefix, view=False):
     # {{{
     try:
+        # Graphviz is open source graph visualization software.
+        ## used just for the Digraph data structure
         from graphviz import Digraph
     except:
         eprint("You are missing the graphviz library - cannot graph primitives!")
@@ -18,6 +20,7 @@ def graphPrimitives(result, prefix, view=False):
     ages = set(age.values())
     age2primitives = {a: {p for p, ap in age.items() if a == ap} for a in ages}
 
+    # ???? 
     def lb(s, T=20):
         # {{{
         s = s.split()
@@ -82,7 +85,6 @@ def graphPrimitives(result, prefix, view=False):
         )
         depth[p] = 1 + max([depth[k] for k in children] + [0])
         return name[p]
-
     # }}}
 
     for p in primitives:
@@ -135,17 +137,21 @@ def graphPrimitives(result, prefix, view=False):
         # {{{
         g = Digraph()
         g.graph_attr["rankdir"] = "RL"
-
-        if False:
-            with g.subgraph(name="cluster_0") as sg:
-                sg.graph_attr["rank"] = "same"
-                sg.attr(label="Primitives")
-                for j, primitive in enumerate(result.grammars[-1].primitives):
-                    if primitive.isInvented:
-                        continue
-                    sg.node("primitive%d" % j, label=str(primitive))
+        # junk code
+##{{{
+#        if False: 
+#            with g.subgraph(name="cluster_0") as sg:
+#                sg.graph_attr["rank"] = "same"
+#                sg.attr(label="Primitives")
+#                for j, primitive in enumerate(result.grammars[-1].primitives):
+#                    if primitive.isInvented:
+#                        continue
+#                    sg.node("primitive%d" % j, label=str(primitive))
+##}}}
 
         for o in sorted(ordering.keys()):
+        # generate markdown of graphs?
+#{{{
             with g.subgraph(name="cluster_%d" % o) as sg:
                 sg.graph_attr["rank"] = "same"
                 # sg.attr(label='Depth %d'%o)
@@ -160,6 +166,7 @@ def graphPrimitives(result, prefix, view=False):
                         eprint()
                         thisLabel = "<%s>" % simplification[p]
                     sg.node(getName(p), label=thisLabel)
+#}}}
 
             for p in ordering[o]:
                 children = {k for _, k in p.body.walk() if k.isInvented}
@@ -174,12 +181,12 @@ def graphPrimitives(result, prefix, view=False):
                 "Got some kind of error while trying to render primitive graph! Did you install graphviz/dot?"
             )
             print(e)
+#}}}
 
+    # print some graphs to some files
     makeGraph(depth2primitives, prefix + "depth.pdf")
     makeUnorderedGraph(prefix + "unordered.pdf")
     # makeGraph(age2primitives,prefix+'iter.pdf')
 
-
-# }}}
 
 # }}}

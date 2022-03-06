@@ -60,7 +60,10 @@ let supervised_task ?(timeout = 0.001) name ty examples =
               | _ -> false
             )
         in
-        if loop examples then 0.0 else log 0.0
+        if loop examples then
+          0.0
+        else
+          log 0.0
       );
   }
 
@@ -87,8 +90,8 @@ let run_recent_logo ~timeout program =
             let p = analyze_lazy_evaluation program in
             let x = run_lazy_analyzed_with_arguments p [] in
             let l = LogoLib.LogoInterpreter.turtle_to_list x in
-            if not (LogoLib.LogoInterpreter.logo_contained_in_canvas l)
-            then None
+            if not (LogoLib.LogoInterpreter.logo_contained_in_canvas l) then
+              None
             else
               match CachingTable.find p2i l with
               | Some bx -> Some bx
@@ -132,7 +135,10 @@ register_special_task "LOGO" (fun extras ?(timeout = 0.001) name ty examples ->
           try
             match run_recent_logo ~timeout p with
             | Some (bx, cost) when LogoLib.LogoInterpreter.fp_equal bx by 0 ->
-                if cost_matters then (0. -. cost) *. 10. else 0.
+                if cost_matters then
+                  (0. -. cost) *. 10.
+                else
+                  0.
             | _ -> log 0.
           with
           (* We have to be a bit careful with exceptions if the
@@ -205,9 +211,11 @@ register_special_task "differentiable"
         (fun expression ->
           let p, parameters = replace_placeholders expression in
           assert (List.length parameters <= maxParameters) ;
-          if List.length parameters > maxParameters
-             || List.length parameters > actualParameters
-          then log 0.
+          if
+            List.length parameters > maxParameters
+            || List.length parameters > actualParameters
+          then
+            log 0.
           else
             let p = analyze_lazy_evaluation p in
             (* let predictions = examples |> List.map ~f:(fun (xs,_) -> *)
@@ -247,19 +255,21 @@ register_special_task "differentiable"
                 let n = List.length examples |> Int.to_float in
                 let d = List.length parameters |> Int.to_float in
                 let l =
-                  if proportional && List.length parameters > 0
-                  then (
+                  if proportional && List.length parameters > 0 then (
                     assert (List.length parameters = 1) ;
                     parameters |> List.iter ~f:(fun p -> update_variable p 1.) ;
                     assert false
-                  )
-                  else
+                  ) else
                     let l = l *& ~$(1. /. n) in
                     let l =
                       restarting_optimize (rprop ~lr ~decay ~grow)
                         ~attempts:restarts ~update:0
                         ~iterations:
-                          (if List.length parameters = 0 then 0 else steps)
+                          ( if List.length parameters = 0 then
+                            0
+                          else
+                            steps
+                          )
                         parameters l
                     in
                     l
@@ -268,7 +278,10 @@ register_special_task "differentiable"
                 | None ->
                     0. -. (d *. parameterPenalty) -. (n *. l /. temperature)
                 | Some t ->
-                    if l < t then 0. -. (d *. parameterPenalty) else log 0.
+                    if l < t then
+                      0. -. (d *. parameterPenalty)
+                    else
+                      log 0.
               )
         );
     }
@@ -307,8 +320,8 @@ register_special_task "stringConstant"
       task_type = ty;
       log_likelihood =
         (fun expression ->
-          if number_of_string_constants expression > maxParameters
-          then log 0.
+          if number_of_string_constants expression > maxParameters then
+            log 0.
           else
             substitute_string_constants stringConstants expression
             |> List.map ~f:(fun p ->
@@ -329,15 +342,17 @@ register_special_task "stringConstant"
                          | UnknownPrimitive n ->
                              raise (Failure ("Unknown primitive: " ^ n))
                          | otherException ->
-                             if otherException = EnumerationTimeout
-                             then raise EnumerationTimeout
-                             else false
+                             if otherException = EnumerationTimeout then
+                               raise EnumerationTimeout
+                             else
+                               false
                        )
                    in
                    let hit = loop examples in
-                   if hit
-                   then lc *. Float.of_int (string_constants_length p)
-                   else log 0.
+                   if hit then
+                     lc *. Float.of_int (string_constants_length p)
+                   else
+                     log 0.
                )
             |> List.fold_right ~init:(log 0.) ~f:max
         );
@@ -349,7 +364,12 @@ let keep_best_programs_in_frontier (k : int) (f : frontier) : frontier =
     request = f.request;
     programs =
       List.sort
-        ~compare:(fun (_, a) (_, b) -> if a > b then -1 else 1)
+        ~compare:(fun (_, a) (_, b) ->
+          if a > b then
+            -1
+          else
+            1
+        )
         f.programs
       |> flip List.take k;
   }
@@ -363,9 +383,10 @@ let score_programs_for_task (f : frontier) (t : task) : frontier =
       f.programs
       |> List.filter_map ~f:(fun (program, descriptionLength) ->
              let likelihood = t.log_likelihood program in
-             if likelihood > -0.1
-             then Some (program, descriptionLength +. likelihood)
-             else None
+             if likelihood > -0.1 then
+               Some (program, descriptionLength +. likelihood)
+             else
+               None
          );
   }
 
@@ -447,8 +468,7 @@ let enumerate_for_tasks
           range nt
           |> List.iter ~f:(fun j ->
                  let logLikelihood = tasks.(j).log_likelihood p in
-                 if is_valid logLikelihood
-                 then (
+                 if is_valid logLikelihood then (
                    let dt =
                      Time.abs_diff startTime (Time.now ()) |> Time.Span.to_sec
                    in
@@ -462,8 +482,7 @@ let enumerate_for_tasks
                    while Heap.length hits.(j) > maximumFrontier.(j) do
                      Heap.remove_top hits.(j)
                    done ;
-                   if verbose
-                   then
+                   if verbose then
                      Printf.eprintf "\t(ocaml) HIT %s w/ %s\n" tasks.(j).name
                        (string_of_program p)
                  )
@@ -472,8 +491,7 @@ let enumerate_for_tasks
       |> List.concat
     in
 
-    if nc > 1
-    then
+    if nc > 1 then
       (* merge the results from each of the parallel processes *)
       final_results
       |> List.iter ~f:(fun (array_of_heaps, number_enumerated_here) ->
@@ -484,11 +502,10 @@ let enumerate_for_tasks
                     let new_heap = array_of_heaps.(j) in
                     let old_heap = hits.(j) in
                     List.iter new_heap ~f:(fun element ->
-                        if not (Heap.mem old_heap ~equal:( = ) element)
-                        then (
+                        if not (Heap.mem old_heap ~equal:( = ) element) then (
                           Heap.add old_heap element ;
-                          if Heap.length old_heap > maximumFrontier.(j)
-                          then Heap.remove_top old_heap
+                          if Heap.length old_heap > maximumFrontier.(j) then
+                            Heap.remove_top old_heap
                         )
                     )
                 )

@@ -131,8 +131,20 @@ let square_root = make_unitary_variable sqrt (fun a -> [ 0.5 /. sqrt a ])
 
 let clamp ~l ~u =
   make_unitary_variable
-    (fun a -> if a > u then u else if a < l then l else a)
-    (fun a -> if a > u || a < l then [ 0. ] else [ 1. ])
+    (fun a ->
+      if a > u then
+        u
+      else if a < l then
+        l
+      else
+        a
+    )
+    (fun a ->
+      if a > u || a < l then
+        [ 0. ]
+      else
+        [ 1. ]
+    )
 
 let log_soft_max xs =
   make_variable
@@ -167,7 +179,10 @@ let rec zero_gradients z =
       List.iter z.arguments ~f:(fun a -> zero_gradients a) ;
       z.gradient <- None ;
       z.descendents <- [] ;
-      if z.arguments = [] then () else z.data <- None
+      if z.arguments = [] then
+        ()
+      else
+        z.data <- None
 
 let rec forward z =
   match z.data with
@@ -199,19 +214,18 @@ let update_network loss =
 let rec run_optimizer opt ?(update = 1000) ?(iterations = 10000) parameters loss
     =
   let l = update_network loss in
-  if iterations = 0
-  then l
+  if iterations = 0 then
+    l
   else (
-    if update > 0 && iterations mod update = 0
-    then (
+    if update > 0 && iterations mod update = 0 then (
       Printf.eprintf "LOSS: %f\n" l ;
       parameters
       |> List.iter ~f:(fun p ->
              Printf.eprintf "parameter %f\t" (p.data |> get_some)
          ) ;
       Printf.eprintf "\n"
-    )
-    else () ;
+    ) else
+      () ;
 
     parameters
     |> List.map ~f:differentiate
@@ -249,8 +263,7 @@ let rprop ?(lr = 0.1) ?(decay = 0.5) ?(grow = 1.2) =
 
   fun dxs ->
     let new_signs = dxs |> List.map ~f:(fun dx -> dx > 0.) in
-    if !first_iteration
-    then (
+    if !first_iteration then (
       first_iteration := false ;
       (* First iteration: ignore the previous signs, which have not yet been recorded *)
       let updates = dxs |> List.map ~f:(fun dx -> ~-.dx *. lr) in
@@ -259,23 +272,24 @@ let rprop ?(lr = 0.1) ?(decay = 0.5) ?(grow = 1.2) =
       individual_rates := dxs |> List.map ~f:(fun _ -> lr) ;
 
       updates
-    )
-    else (
+    ) else (
       individual_rates :=
         List.map3_exn !individual_rates !previous_signs new_signs
           ~f:(fun individual_rate previous_sign new_sign ->
-            if previous_sign = new_sign
-            then individual_rate *. grow
-            else individual_rate *. decay
+            if previous_sign = new_sign then
+              individual_rate *. grow
+            else
+              individual_rate *. decay
         ) ;
 
       let updates =
         List.map2_exn !individual_rates dxs ~f:(fun individual_rate dx ->
-            if dx > 0.
-            then ~-.individual_rate
-            else if dx < 0.
-            then individual_rate
-            else 0.
+            if dx > 0. then
+              ~-.individual_rate
+            else if dx < 0. then
+              individual_rate
+            else
+              0.
         )
       in
       previous_signs := new_signs ;

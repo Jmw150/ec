@@ -64,12 +64,12 @@ let serialize_frontier f =
   j
 
 let violates_symmetry f a n =
-  if not (is_base_primitive f)
-  then false
+  if not (is_base_primitive f) then
+    false
   else
     let a = application_function a in
-    if not (is_base_primitive a)
-    then false
+    if not (is_base_primitive a) then
+      false
     else
       match (n, primitive_name f, primitive_name a) with
       (* McCarthy primitives *)
@@ -297,7 +297,12 @@ let best_first_enumeration
     Heap.create
       ~cmp:(fun s1 s2 ->
         let c = s1.cost -. s2.cost in
-        if c < 0. then -1 else if c > 0. then 1 else 0
+        if c < 0. then
+          -1
+        else if c > 0. then
+          1
+        else
+          0
       )
       ()
   in
@@ -309,14 +314,15 @@ let best_first_enumeration
     (* Printf.printf "\nParent:\n%s\n" (string_of_state best); *)
     state_successors ~maxFreeParameters cg best
     |> List.iter ~f:(fun child ->
-           if state_finished child
-           then
-             if lower_bound <= child.cost && child.cost < upper_bound
-             then completed := child :: !completed
-             else ()
-           else if child.cost < upper_bound
-           then Heap.add pq child
-           else ()
+           if state_finished child then
+             if lower_bound <= child.cost && child.cost < upper_bound then
+               completed := child :: !completed
+             else
+               ()
+           else if child.cost < upper_bound then
+             Heap.add pq child
+           else
+             ()
        )
   done ;
 
@@ -343,8 +349,8 @@ let rec enumerate_programs'
     (callBack : program -> tContext -> float -> int -> unit) : unit =
   (* Enumerates programs satisfying: lowerBound <= MDL < upperBound *)
   (* INVARIANT: request always has the current context applied to it already *)
-  if enumeration_timed_out () || maximumDepth < 1 || upper_bound < 0.0
-  then ()
+  if enumeration_timed_out () || maximumDepth < 1 || upper_bound < 0.0 then
+    ()
   else
     match request with
     | TCon ("->", [ argument_type; return_type ], _) ->
@@ -360,16 +366,18 @@ let rec enumerate_programs'
         candidates
         |> List.iter ~f:(fun (candidate, argument_types, context, ll) ->
                let mdl = 0. -. ll in
-               if mdl >= upper_bound
-                  ||
-                  match parent with
-                  | None -> false
-                  | Some (p, j) -> violates_symmetry p candidate j
-               then ()
+               if
+                 mdl >= upper_bound
+                 ||
+                 match parent with
+                 | None -> false
+                 | Some (p, j) -> violates_symmetry p candidate j
+               then
+                 ()
                else
                  let fp = number_of_free_parameters candidate in
-                 if fp > maxFreeParameters
-                 then ()
+                 if fp > maxFreeParameters then
+                   ()
                  else
                    let argument_requests =
                      match candidate with
@@ -405,20 +413,20 @@ and enumerate_contextual_applications
     (callBack : program -> tContext -> float -> int -> unit) : unit =
   (* Enumerates application chains satisfying: lowerBound <= MDL < upperBound *)
   (* returns the log likelihood of the arguments! not the log likelihood of the application! *)
-  if enumeration_timed_out () || maximumDepth < 1 || upper_bound < 0.0
-  then ()
+  if enumeration_timed_out () || maximumDepth < 1 || upper_bound < 0.0 then
+    ()
   else
     match argument_requests with
     | [] ->
         (* not a function so we don't need any applications *)
-        if lower_bound <= 0. && 0. < upper_bound
-        then
+        if lower_bound <= 0. && 0. < upper_bound then
           (* match f with
            * | Apply(Apply(Primitive(_,function_name,_),first_argument),second_argument)
            *   when violates_commutative function_name first_argument second_argument -> ()
            * | _ -> *)
           callBack f context 0.0 0
-        else ()
+        else
+          ()
     | (first_argument, first_grammar) :: later_arguments ->
         let context, first_argument = applyContext context first_argument in
         enumerate_programs' ~maximumDepth ~maxFreeParameters
@@ -537,8 +545,7 @@ let multicore_enumeration
       ~frontier_size:shatter ~maxFreeParameters cg request
   in
 
-  if not extraQuiet
-  then (
+  if not extraQuiet then (
     Printf.eprintf
       "\t(ocaml: %d CPUs. shatter: %d. |fringe| = %d. |finished| = %d.)\n" cores
       shatter (List.length fringe) (List.length finished) ;
@@ -556,19 +563,22 @@ let multicore_enumeration
     fringe
     |> List.sort ~compare:(fun s1 s2 ->
            let d = s1.cost -. s2.cost in
-           if d > 0. then 1 else if d < 0. then -1 else 0
+           if d > 0. then
+             1
+           else if d < 0. then
+             -1
+           else
+             0
        )
   in
 
-  if cores > 1
-  then (
+  if cores > 1 then (
     let actions = fringe |> List.map ~f:(fun s () -> continuation s) in
     let fringe_results = parallel_work ~nc:cores ~chunk:1 ~final actions in
     (* ignore(time_it "Evaluated finished programs" (fun () -> *)
     finished |> List.iter ~f:(fun s -> k s.skeleton (0. -. s.cost)) ;
     final () :: fringe_results
-  )
-  else (
+  ) else (
     List.iter ~f:continuation fringe ;
     finished |> List.iter ~f:(fun s -> k s.skeleton (0. -. s.cost)) ;
     [ final () ]
@@ -609,51 +619,55 @@ let enumerate_programs
       contextual_library =
         cg.contextual_library
         |> List.filter_map ~f:(fun (program, grammars) ->
-               if is_recursion_primitive program
-               then None
-               else Some (program, grammars |> List.map ~f:strip_recursion)
+               if is_recursion_primitive program then
+                 None
+               else
+                 Some (program, grammars |> List.map ~f:strip_recursion)
            );
     }
   in
 
-  let request' = if definitely_recursive then request @> request else request in
+  let request' =
+    if definitely_recursive then
+      request @> request
+    else
+      request
+  in
 
   let k' =
-    if definitely_recursive
-    then
+    if definitely_recursive then
       fun p l ->
-      let p' =
-        match p with
-        | Abstraction body ->
-            if variable_is_bound ~height:0 body
-            then
-              (* Used the fix point operator *)
-              match number_of_arguments with
-              | 1 ->
-                  Abstraction (Apply (Apply (primitive_recursion, Index 0), p))
-              | 2 ->
-                  Abstraction
-                    (Abstraction
-                       (Apply
-                          ( Apply
-                              (Apply (primitive_recursion2, Index 1), Index 0),
-                            p
-                          )
-                       )
-                    )
-              | _ ->
-                  raise
-                    (Failure "number_of_arguments not supported by fix point")
-            else body (* Remove unused recursion *)
-        | _ ->
-            raise
-              (Failure
-                 "enumerated recursive definition that does not start with a \
-                  lambda"
-              )
-      in
-      k p' l
-    else k
+    let p' =
+      match p with
+      | Abstraction body ->
+          if variable_is_bound ~height:0 body then
+            (* Used the fix point operator *)
+            match number_of_arguments with
+            | 1 -> Abstraction (Apply (Apply (primitive_recursion, Index 0), p))
+            | 2 ->
+                Abstraction
+                  (Abstraction
+                     (Apply
+                        ( Apply (Apply (primitive_recursion2, Index 1), Index 0),
+                          p
+                        )
+                     )
+                  )
+            | _ ->
+                raise (Failure "number_of_arguments not supported by fix point")
+          else
+            body
+          (* Remove unused recursion *)
+      | _ ->
+          raise
+            (Failure
+               "enumerated recursive definition that does not start with a \
+                lambda"
+            )
+    in
+    k p' l
+    else
+      k
   in
 
   multicore_enumeration ~extraQuiet ~maxFreeParameters ~final ~cores:nc g'

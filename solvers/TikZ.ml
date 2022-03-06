@@ -21,11 +21,25 @@ let canonical_command_list : 'a Core.List.t -> 'a Core.List.t =
  fun l ->
   let l2 =
     List.dedup_and_sort
-      ~compare:(fun c1 c2 -> if c1 > c2 then 1 else if c1 = c2 then 0 else -1)
+      ~compare:(fun c1 c2 ->
+        if c1 > c2 then
+          1
+        else if c1 = c2 then
+          0
+        else
+          -1
+      )
       l
   in
   List.sort
-    ~compare:(fun c1 c2 -> if c1 > c2 then 1 else if c1 = c2 then 0 else -1)
+    ~compare:(fun c1 c2 ->
+      if c1 > c2 then
+        1
+      else if c1 = c2 then
+        0
+      else
+        -1
+    )
     l2
 
 type cid =
@@ -271,18 +285,19 @@ let score_latex output =
   let output = canonical_command_list output in
 
   fun program ->
-    if List.exists (0 -- 100) ~f:(fun _ ->
-           let p = random_instantiation ~x:false ~i:C program in
-           let v : command list =
-             evaluate [] p |> magical |> canonical_command_list
-           in
-           v = output
-       )
+    if
+      List.exists (0 -- 100) ~f:(fun _ ->
+          let p = random_instantiation ~x:false ~i:C program in
+          let v : command list =
+            evaluate [] p |> magical |> canonical_command_list
+          in
+          v = output
+      )
     then (
       Printf.eprintf "PROGRAM: %s\n" (string_of_program program) ;
       10. *. likelihood_penalty program
-    )
-    else log 0.
+    ) else
+      log 0.
 
 let latex_task name output =
   { name; task_type = ttrace; log_likelihood = score_latex output }

@@ -72,9 +72,10 @@ let rec show_type (is_return : bool) (t : tp) : string =
   | TID i -> "t" ^ string_of_int i
   | TCon (k, [], _) -> k
   | TCon (k, [ p; q ], _) when k = "->" ->
-      if is_return
-      then show_type false p ^ " -> " ^ show_type true q
-      else "(" ^ show_type false p ^ " -> " ^ show_type true q ^ ")"
+      if is_return then
+        show_type false p ^ " -> " ^ show_type true q
+      else
+        "(" ^ show_type false p ^ " -> " ^ show_type true q ^ ")"
   | TCon (k, a, _) ->
       k ^ "(" ^ String.concat ~sep:", " (List.map a ~f:(show_type true)) ^ ")"
 
@@ -84,7 +85,10 @@ let makeTID (next, substitution) =
   (TID next, (next + 1, Funarray.cons None substitution))
 
 let rec makeTIDs (n : int) (k : tContext) : tContext =
-  if n = 0 then k else makeTIDs (n - 1) (makeTID k |> snd)
+  if n = 0 then
+    k
+  else
+    makeTIDs (n - 1) (makeTID k |> snd)
 
 let bindTID i t (next, bindings) : tContext =
   (next, Funarray.update bindings (next - i - 1) (Some t))
@@ -111,8 +115,8 @@ let lookupTID (next, bindings) j =
 (*     | None -> (t,context) *)
 
 let rec applyContext k t =
-  if not (is_polymorphic t)
-  then (k, t)
+  if not (is_polymorphic t) then
+    (k, t)
   else
     match t with
     | TCon (c, xs, _) ->
@@ -128,13 +132,18 @@ let rec applyContext k t =
         | None -> (k, t)
         | Some tp ->
             let k, tp' = applyContext k tp in
-            let k = if tp_eq tp tp' then k else bindTID j tp' k in
+            let k =
+              if tp_eq tp tp' then
+                k
+              else
+                bindTID j tp' k
+            in
             (k, tp')
       )
 
 let rec occurs (i : int) (t : tp) : bool =
-  if not (is_polymorphic t)
-  then false
+  if not (is_polymorphic t) then
+    false
   else
     match t with
     | TID j -> j = i
@@ -155,22 +164,27 @@ let rec might_unify t1 t2 =
 let rec unify context t1 t2 : tContext =
   let context, t1 = applyContext context t1 in
   let context, t2 = applyContext context t2 in
-  if (not (is_polymorphic t1)) && not (is_polymorphic t2)
-  then if tp_eq t1 t2 then context else raise UnificationFailure
+  if (not (is_polymorphic t1)) && not (is_polymorphic t2) then
+    if tp_eq t1 t2 then
+      context
+    else
+      raise UnificationFailure
   else
     match (t1, t2) with
     | TID j, t ->
-        if tp_eq t1 t2
-        then context
-        else if occurs j t
-        then raise UnificationFailure
-        else bindTID j t context
+        if tp_eq t1 t2 then
+          context
+        else if occurs j t then
+          raise UnificationFailure
+        else
+          bindTID j t context
     | t, TID j ->
-        if t1 = t2
-        then context
-        else if occurs j t
-        then raise UnificationFailure
-        else bindTID j t context
+        if t1 = t2 then
+          context
+        else if occurs j t then
+          raise UnificationFailure
+        else
+          bindTID j t context
     | TCon (k1, as1, _), TCon (k2, as2, _) when k1 = k2 ->
         List.fold2_exn ~init:context as1 as2 ~f:unify
     | _ -> raise UnificationFailure
@@ -179,8 +193,8 @@ let instantiate_type k t =
   let substitution = ref [] in
   let k = ref k in
   let rec instantiate j =
-    if not (is_polymorphic j)
-    then j
+    if not (is_polymorphic j) then
+      j
     else
       match j with
       | TID i -> (
@@ -269,8 +283,8 @@ let rec get_arity = function
   | _ -> 0
 
 let rec pad_type_with_arguments context n t =
-  if n = 0
-  then (context, t)
+  if n = 0 then
+    (context, t)
   else
     let a, context = makeTID context in
     let context, suffix = pad_type_with_arguments context (n - 1) t in

@@ -60,9 +60,10 @@ let inside_outside ~pseudoCounts g (frontiers : frontier list) =
     let possible p =
       Hashtbl.fold ~init:0. s.normalizer_frequency
         ~f:(fun ~key ~data accumulator ->
-          if List.mem ~equal:program_equal key p
-          then accumulator +. data
-          else accumulator
+          if List.mem ~equal:program_equal key p then
+            accumulator +. data
+          else
+            accumulator
       )
     in
     let actual p =
@@ -132,9 +133,10 @@ let eta_long request e =
   let context = ref empty_context in
 
   let make_long e request =
-    if is_arrow request
-    then Some (Abstraction (Apply (shift_free_variables 1 e, Index 0)))
-    else None
+    if is_arrow request then
+      Some (Abstraction (Apply (shift_free_variables 1 e, Index 0)))
+    else
+      None
   in
 
   let rec visit request environment e =
@@ -170,8 +172,8 @@ let eta_long request e =
             unify' context request (return_of_type ft) ;
             let ft = applyContext' context ft in
             let xt = arguments_of_type ft in
-            if List.length xs <> List.length xt
-            then raise EtaExpandFailure
+            if List.length xs <> List.length xt then
+              raise EtaExpandFailure
             else
               let xs' =
                 List.map2_exn xs xt ~f:(fun x t ->
@@ -235,8 +237,8 @@ let rewrite_with_invention i =
   in
 
   let rec visit e =
-    if program_equal e i
-    then applied_invention
+    if program_equal e i then
+      applied_invention
     else
       match e with
       | Apply (f, x) -> Apply (visit f, visit x)
@@ -254,8 +256,7 @@ let rewrite_with_invention i =
       e'
     with
     | UnificationFailure ->
-        if !verbose_compression
-        then (
+        if !verbose_compression then (
           Printf.eprintf
             "WARNING: rewriting with invention gave ill typed term.\n" ;
           Printf.eprintf "Original:\t\t%s\n" (e |> string_of_program) ;
@@ -286,9 +287,10 @@ let nontrivial e =
   let rec visit d = function
     | Index i ->
         let i = i - d in
-        if List.mem ~equal:( = ) !indices i
-        then incr duplicated_indices
-        else indices := i :: !indices
+        if List.mem ~equal:( = ) !indices i then
+          incr duplicated_indices
+        else
+          indices := i :: !indices
     | Apply (f, x) ->
         visit d f ;
         visit d x
@@ -332,8 +334,7 @@ let compression_worker connection ~inline ~arity ~bs ~topK g frontiers =
            )
     )
   in
-  if !collect_data
-  then
+  if !collect_data then
     List.iter2_exn !frontiers frontier_indices ~f:(fun frontier indices ->
         List.iter2_exn frontier.programs indices ~f:(fun (p, _) index ->
             let rec program_size = function
@@ -352,8 +353,7 @@ let compression_worker connection ~inline ~arity ~bs ~topK g frontiers =
               (log_version_size v index)
         )
     ) ;
-  if !verbose_compression
-  then
+  if !verbose_compression then
     Printf.eprintf
       "(worker) %d distinct version spaces enumerated; %d accessible vs size; \
        vs log sizes: %s\n"
@@ -395,8 +395,7 @@ let compression_worker connection ~inline ~arity ~bs ~topK g frontiers =
         inhabitants
     )
   in
-  if !verbose_compression
-  then
+  if !verbose_compression then
     Printf.eprintf "(worker) Total candidates: [%s] = %d, packs into %d vs\n"
       (candidates
       |> List.map ~f:(Printf.sprintf "%d" % List.length)
@@ -412,8 +411,7 @@ let compression_worker connection ~inline ~arity ~bs ~topK g frontiers =
   let candidates : program list = receive () in
   let candidates : int list = candidates |> List.map ~f:(incorporate v) in
 
-  if !verbose_compression
-  then (
+  if !verbose_compression then (
     Printf.eprintf "(worker) Got %d candidates.\n" (List.length candidates) ;
     flush_everything ()
   ) ;
@@ -498,13 +496,14 @@ let compression_worker connection ~inline ~arity ~bs ~topK g frontiers =
                 let programs' =
                   List.map2_exn new_programs frontier.programs
                     ~f:(fun program (originalProgram, ll) ->
-                      if not
-                           (program_equal
-                              (beta_normal_form ~reduceInventions:true program)
-                              (beta_normal_form ~reduceInventions:true
-                                 originalProgram
-                              )
-                           )
+                      if
+                        not
+                          (program_equal
+                             (beta_normal_form ~reduceInventions:true program)
+                             (beta_normal_form ~reduceInventions:true
+                                originalProgram
+                             )
+                          )
                       then (
                         Printf.eprintf "FATAL: %s refactored into %s\n"
                           (string_of_program originalProgram)
@@ -625,15 +624,22 @@ let compression_step_master
     | _ -> ()
   in
 
-  if !verbose_compression
-  then ignore (Unix.system "ps aux|grep compression 1>&2") ;
+  if !verbose_compression then
+    ignore (Unix.system "ps aux|grep compression 1>&2") ;
 
   let divide_work_fairly nc xs =
     let nt = List.length xs in
     let base_count = nt / nc in
     let residual = nt - (base_count * nc) in
     let rec partition residual xs =
-      let this_count = base_count + if residual > 0 then 1 else 0 in
+      let this_count =
+        base_count
+        +
+        if residual > 0 then
+          1
+        else
+          0
+      in
       match xs with
       | [] -> []
       | _ :: _ ->
@@ -697,8 +703,7 @@ let compression_step_master
            ss
        )
   in
-  if !verbose_compression
-  then (
+  if !verbose_compression then (
     Printf.eprintf "(master) Received worker beams\n" ;
     flush_everything ()
   ) ;
@@ -753,8 +758,7 @@ let compression_step_master
           grammar_induction_score ~aic ~pseudoCounts ~structurePenalty frontiers
             new_grammar
         in
-        if !verbose_compression
-        then (
+        if !verbose_compression then (
           let source = normalize_invention candidate in
           Printf.eprintf "Invention %s : %s\n\tContinuous score %f\n"
             (string_of_program source)
@@ -784,13 +788,11 @@ let compression_step_master
             |> minimum_by (fun ((_, s), _) -> -.s)
         )
       in
-      if best_score < initial_score
-      then (
+      if best_score < initial_score then (
         Printf.eprintf "No improvement possible.\n" ;
         finish () ;
         None
-      )
-      else
+      ) else
         let new_primitive = grammar_primitives g' |> List.hd_exn in
         Printf.eprintf
           "Improved score to %f (dScore=%f) w/ new primitive\n\t%s : %s\n"
@@ -902,7 +904,8 @@ let compression_step
         try
           let new_primitive = invention_source |> normalize_invention in
           if List.mem ~equal:program_equal (grammar_primitives g) new_primitive
-          then raise DuplicatePrimitive ;
+          then
+            raise DuplicatePrimitive ;
           let new_grammar =
             uniform_grammar (new_primitive :: grammar_primitives g)
           in
@@ -953,8 +956,7 @@ let compression_step
                    let s, g', frontiers' =
                      try_invention_and_rewrite_frontiers i
                    in
-                   if !verbose_compression
-                   then (
+                   if !verbose_compression then (
                      Printf.eprintf
                        "Invention %s : %s\n\
                         Discrete score %f\n\
@@ -965,9 +967,11 @@ let compression_step
                      frontiers'
                      |> List.iter ~f:(fun f ->
                             let f = string_of_frontier f in
-                            if String.is_substring
-                                 ~substring:(string_of_program source) f
-                            then Printf.eprintf "%s\n" f
+                            if
+                              String.is_substring
+                                ~substring:(string_of_program source) f
+                            then
+                              Printf.eprintf "%s\n" f
                         ) ;
                      Printf.eprintf "\n" ;
                      flush_everything ()
@@ -978,12 +982,10 @@ let compression_step
         )
       in
 
-      if best_score < initial_score
-      then (
+      if best_score < initial_score then (
         Printf.eprintf "No improvement possible.\n" ;
         None
-      )
-      else
+      ) else
         let new_primitive = grammar_primitives g' |> List.hd_exn in
         Printf.eprintf
           "Improved score to %f (dScore=%f) w/ new primitive\n\t%s : %s\n"
@@ -1071,11 +1073,14 @@ let compression_loop
                |> List.hd_exn
                |> fst
              in
-             if List.mem ~equal:program_equal
-                  (program_subexpressions best_program)
-                  primitive
-             then Some best_program
-             else None
+             if
+               List.mem ~equal:program_equal
+                 (program_subexpressions best_program)
+                 primitive
+             then
+               Some best_program
+             else
+               None
          )
     in
     Printf.eprintf
@@ -1089,15 +1094,18 @@ let compression_loop
        )
   in
 
-  let step = if nc = 1 then compression_step else compression_step_master ~nc in
+  let step =
+    if nc = 1 then
+      compression_step
+    else
+      compression_step_master ~nc
+  in
 
   let rec loop ~iterations g frontiers =
-    if iterations < 1
-    then (
+    if iterations < 1 then (
       Printf.eprintf "Exiting ocaml compression because of iteration bound.\n" ;
       (g, frontiers)
-    )
-    else
+    ) else
       match
         time_it "Completed one step of memory consolidation" (fun () ->
             step ~inline ~structurePenalty ~topK ~aic ~pseudoCounts ~arity ~bs
@@ -1107,8 +1115,7 @@ let compression_loop
       | None -> (g, frontiers)
       | Some (g', frontiers') ->
           illustrate_new_primitive g' (find_new_primitive g g') frontiers' ;
-          if !verbose_compression && iterations > 1
-          then
+          if !verbose_compression && iterations > 1 then
             export_compression_checkpoint ~nc ~structurePenalty ~aic ~topK
               ~pseudoCounts ~arity ~bs ~topI g' frontiers' ;
           flush_everything () ;
@@ -1120,12 +1127,11 @@ let () =
   let open Yojson.Basic.Util in
   let open Yojson.Basic in
   let j =
-    if Array.length Sys.argv > 1
-    then (
+    if Array.length Sys.argv > 1 then (
       assert (Array.length Sys.argv = 2) ;
       Yojson.Basic.from_file Sys.argv.(1)
-    )
-    else Yojson.Basic.from_channel Pervasives.stdin
+    ) else
+      Yojson.Basic.from_channel Pervasives.stdin
   in
   let g = j |> member "DSL" |> deserialize_grammar |> strip_grammar in
   let topK = j |> member "topK" |> to_int in
@@ -1145,8 +1151,7 @@ let () =
      try j |> member "factored_apply" |> to_bool with
      | _ -> false
   ) ;
-  if !factored_substitution
-  then
+  if !factored_substitution then
     Printf.eprintf
       "Using experimental new factored representation of application version \
        space.\n" ;
@@ -1180,14 +1185,12 @@ let () =
   in
 
   let g, frontiers =
-    if aic > 500.
-    then (
+    if aic > 500. then (
       Printf.eprintf
         "AIC is very large (over 500), assuming you don't actually want to do \
          DSL learning!" ;
       (g, frontiers)
-    )
-    else
+    ) else
       compression_loop ~inline ~iterations ~nc ~topK ~aic ~structurePenalty
         ~pseudoCounts ~arity ~topI ~bs g frontiers
   in

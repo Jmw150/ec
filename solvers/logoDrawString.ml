@@ -14,8 +14,8 @@ let smooth_logo_wrapper t2t k s0 =
         let dx = x2 -. x1 in
         let dy = y2 -. y1 in
         let l = (dx *. dx) +. (dy *. dy) |> sqrt in
-        if l <= e
-        then [ command ]
+        if l <= e then
+          [ command ]
         else
           let f = e /. l in
           let x = x1 +. (f *. dx) in
@@ -46,7 +46,10 @@ let _ =
   in
 
   let trim s =
-    if s.[0] = '"' then String.sub s 1 (String.length s - 2) else s
+    if s.[0] = '"' then
+      String.sub s 1 (String.length s - 2)
+    else
+      s
   in
 
   let b0 = Bigarray.(Array1.create int8_unsigned c_layout (8 * 8)) in
@@ -74,15 +77,17 @@ let _ =
             (Printf.sprintf "Could not parse %s\n" p)
             (parse_program p)
         in
-        if animate
-        then (
+        if animate then (
           match export with
           | None -> assert false
           | Some export ->
               let p = analyze_lazy_evaluation p in
               let turtle = run_lazy_analyzed_with_arguments p [] in
               let turtle =
-                if smooth_pretty then smooth_logo_wrapper turtle else turtle
+                if smooth_pretty then
+                  smooth_logo_wrapper turtle
+                else
+                  turtle
               in
               let cs = animate_turtle turtle in
               List.iteri cs (fun j c ->
@@ -95,15 +100,17 @@ let _ =
                 ) ;
               Sys.command (Printf.sprintf "rm %s_*.png" export) ;
               `String "exported"
-        )
-        else
+        ) else
           try
             match
               run_for_interval timeout (fun () ->
                   let p = analyze_lazy_evaluation p in
                   let turtle = run_lazy_analyzed_with_arguments p [] in
                   let turtle =
-                    if smooth_pretty then smooth_logo_wrapper turtle else turtle
+                    if smooth_pretty then
+                      smooth_logo_wrapper turtle
+                    else
+                      turtle
                   in
                   let c, cost = eval_turtle turtle in
                   let array = canvas_to_1Darray c size in
@@ -113,8 +120,8 @@ let _ =
             | None -> `String "timeout"
             | Some (c, array, cost) -> (
                 let bx = canvas_to_1Darray c 8 in
-                if bx = b0
-                then `String "empty"
+                if bx = b0 then
+                  `String "empty"
                 else
                   match export with
                   | Some fn ->

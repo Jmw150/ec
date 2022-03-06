@@ -32,8 +32,8 @@ let run_for_interval' (time : float) (c : unit -> 'a) : 'a option =
 (* and ocaml, the wonderful language it is, does not allow you to temporarily disable the garbage collector *)
 (* So this version of run_for_interval allows you to repeatedly try to run the thing for the interval *)
 let rec run_for_interval ?(attempts = 1) dt c =
-  if attempts < 1
-  then None
+  if attempts < 1 then
+    None
   else
     match run_for_interval' dt c with
     | Some v -> Some v

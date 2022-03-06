@@ -36,8 +36,7 @@ let file_to_string filename =
   s
 
 let _ =
-  if Array.length Sys.argv != 2
-  then
+  if Array.length Sys.argv != 2 then
     failwith
       "You need to provide exactly one argument, namely the name of the .LoG \
        file you want to parse and execute, and this program will output a .png \

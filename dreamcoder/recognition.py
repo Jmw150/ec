@@ -1655,6 +1655,8 @@ class RecognitionModel(nn.Module):
 
     def enumerateFrontiers(
         # {{{
+        # args*
+#{{{
         self,
         tasks,
         enumerationTimeout=None,
@@ -1664,10 +1666,11 @@ class RecognitionModel(nn.Module):
         frontierSize=None,
         maximumFrontier=None,
         evaluationTimeout=None,
+#}}}
     ):
         with timing("Evaluated recognition model"):
             grammars = {task: self.grammarOfTask(task) for task in tasks}
-            # untorch seperately to make sure you filter out None grammars
+            # untorch separately to make sure you filter out None grammars
             grammars = {
                 task: grammar.untorch()
                 for task, grammar in grammars.items()

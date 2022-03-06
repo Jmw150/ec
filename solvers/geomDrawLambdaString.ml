@@ -58,11 +58,12 @@ let _ =
         try
           let c = interpret ~noise program in
           let l = Plumbing.canvas_to_tlist 28 c in
-          if l = empty28
-          then ()
-          else if not (output_img = "none")
-          then Renderer.output_canvas_png c 512 output_img
-          else npp l
+          if l = empty28 then
+            ()
+          else if not (output_img = "none") then
+            Renderer.output_canvas_png c 512 output_img
+          else
+            npp l
         with
         | Interpreter.MalformedProgram _ -> print_newline ()
       )

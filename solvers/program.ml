@@ -62,9 +62,10 @@ let rec show_program (is_function : bool) = function
   | Index j -> "$" ^ string_of_int j
   | Abstraction body -> "(lambda " ^ show_program false body ^ ")"
   | Apply (p, q) ->
-      if is_function
-      then show_program true p ^ " " ^ show_program false q
-      else "(" ^ show_program true p ^ " " ^ show_program false q ^ ")"
+      if is_function then
+        show_program true p ^ " " ^ show_program false q
+      else
+        "(" ^ show_program true p ^ " " ^ show_program false q ^ ")"
   | Primitive (_, n, _) -> n
   | Invented (_, i) -> "#" ^ show_program false i
 
@@ -95,7 +96,10 @@ let rec compare_program p1 p2 =
   | Abstraction _, _ -> -1
   | Apply (p, q), Apply (m, n) ->
       let c = compare_program p m in
-      if c = 0 then compare_program q n else c
+      if c = 0 then
+        compare_program q n
+      else
+        c
   | Apply (_, _), _ -> -1
   | Primitive (_, n1, _), Primitive (_, n2, _) -> String.compare n1 n2
   | Primitive (_, _, _), _ -> -1
@@ -138,9 +142,10 @@ let lookup_primitive n =
 let[@warning "-20"] rec evaluate (environment : 'b list) (p : program) : 'a =
   match p with
   | Apply (Apply (Apply (Primitive (_, "if", _), branch), yes), no) ->
-      if magical (evaluate environment branch)
-      then evaluate environment yes
-      else evaluate environment no
+      if magical (evaluate environment branch) then
+        evaluate environment yes
+      else
+        evaluate environment no
   | Abstraction b ->
       magical @@ fun argument -> evaluate (argument :: environment) b
   | Index j -> magical @@ List.nth_exn environment j
@@ -156,7 +161,10 @@ let rec analyze_evaluation (p : program) : 'b list -> 'a =
       and yes = analyze_evaluation yes
       and no = analyze_evaluation no in
       fun environment ->
-        if magical (branch environment) then yes environment else no environment
+        if magical (branch environment) then
+          yes environment
+        else
+          no environment
   | Abstraction b ->
       let body = analyze_evaluation b in
       fun environment -> magical (fun x -> body (x :: environment))
@@ -264,11 +272,12 @@ exception ShiftFailure
 let rec shift_free_variables ?(height = 0) shift p =
   match p with
   | Index j ->
-      if j < height
-      then p
-      else if j + shift < 0
-      then raise ShiftFailure
-      else Index (j + shift)
+      if j < height then
+        p
+      else if j + shift < 0 then
+        raise ShiftFailure
+      else
+        Index (j + shift)
   | Apply (f, x) ->
       Apply
         ( shift_free_variables ~height shift f,
@@ -281,14 +290,22 @@ let rec shift_free_variables ?(height = 0) shift p =
 
 let rec free_variables ?(d = 0) e =
   match e with
-  | Index j -> if j >= d then [ j - d ] else []
+  | Index j ->
+      if j >= d then
+        [ j - d ]
+      else
+        []
   | Apply (f, x) -> free_variables ~d f @ free_variables ~d x
   | Abstraction b -> free_variables ~d:(d + 1) b
   | _ -> []
 
 let rec substitute i v e =
   match e with
-  | Index j -> if i = j then v else e
+  | Index j ->
+      if i = j then
+        v
+      else
+        e
   | Abstraction b ->
       Abstraction (substitute (i + 1) (shift_free_variables 1 v) b)
   | Apply (f, x) -> Apply (substitute i v f, substitute i v x)
@@ -343,8 +360,8 @@ let[@warning "-20"] primitive
   let number_of_arguments = arguments_of_type t |> List.length in
   (* Force the arguments *)
   let x =
-    if manualLaziness
-    then x
+    if manualLaziness then
+      x
     else
       magical
       @@
@@ -474,7 +491,12 @@ let primitive_if =
   primitive "if"
     (tboolean @> t0 @> t0 @> t0)
     ~manualLaziness:true
-    (fun p x y -> if Lazy.force p then Lazy.force x else Lazy.force y)
+    (fun p x y ->
+      if Lazy.force p then
+        Lazy.force x
+      else
+        Lazy.force y
+    )
 
 let primitive_is_square =
   primitive "is-square" (tint @> tboolean) (fun x ->
@@ -721,7 +743,15 @@ ignore
 ignore
   (primitive "replace-character"
      (tcharacter @> tcharacter @> tstring @> tstring)
-     (fun c1 c2 s -> s |> List.map ~f:(fun c -> if c = c1 then c2 else c))
+     (fun c1 c2 s ->
+       s
+       |> List.map ~f:(fun c ->
+              if c = c1 then
+                c2
+              else
+                c
+          )
+     )
   )
 
 let primitive_run =
@@ -826,9 +856,10 @@ primitive "logo_PT"
         LogoLib.LogoInterpreter.logo_SEQ LogoLib.LogoInterpreter.logo_PU
           (body
              (LogoLib.LogoInterpreter.logo_SEQ
-                ( if original_state
-                then LogoLib.LogoInterpreter.logo_PD
-                else LogoLib.LogoInterpreter.logo_PU
+                ( if original_state then
+                  LogoLib.LogoInterpreter.logo_PD
+                else
+                  LogoLib.LogoInterpreter.logo_PU
                 )
                 continuation
              )
@@ -937,7 +968,12 @@ let _ =
 (*let logo_CHEAT4  = primitive "logo_CHEAT4"             (ttvar @> turtle) LogoLib.LogoInterpreter.logo_CHEAT4*)
 
 let default_recursion_limit = 20
-let rec unfold x p h n = if p x then [] else h x :: unfold (n x) p h n
+
+let rec unfold x p h n =
+  if p x then
+    []
+  else
+    h x :: unfold (n x) p h n
 
 let primitive_unfold =
   primitive "unfold"
@@ -973,9 +1009,10 @@ let fixed_combinator argument body =
        recursions *)
     let r z =
       decr recursion_limit ;
-      if !recursion_limit > 0
-      then fix z
-      else raise (RecursionDepthExceeded !default_recursion_limit)
+      if !recursion_limit > 0 then
+        fix z
+      else
+        raise (RecursionDepthExceeded !default_recursion_limit)
     in
     body (lazy r) x
   in
@@ -989,9 +1026,10 @@ let fixed_combinator2 argument1 argument2 body =
   let rec fix x y =
     let r a b =
       decr recursion_limit ;
-      if !recursion_limit > 0
-      then fix a b
-      else raise (RecursionDepthExceeded !default_recursion_limit)
+      if !recursion_limit > 0 then
+        fix a b
+      else
+        raise (RecursionDepthExceeded !default_recursion_limit)
     in
     body (lazy r) x y
   in
@@ -1069,7 +1107,10 @@ let program_parser : program parsing =
     return_parse (Invented (t, p))
   and abstraction () =
     let rec nabstractions n b =
-      if n = 0 then b else nabstractions (n - 1) (Abstraction b)
+      if n = 0 then
+        b
+      else
+        nabstractions (n - 1) (Abstraction b)
     in
     constant_parser "(lambda" %% fun _ ->
     ( whitespace %% fun _ ->
@@ -1122,13 +1163,11 @@ let parsing_test_case s =
   Printf.printf "Parsing the string %s\n" s ;
   program_parser (s, 0)
   |> List.iter ~f:(fun (p, n) ->
-         if n = String.length s
-         then (
+         if n = String.length s then (
            Printf.printf "Parsed into the program: %s\n" (string_of_program p) ;
            assert (s = string_of_program p) ;
            flush_everything ()
-         )
-         else (
+         ) else (
            Printf.printf "With the suffix %n, we get the program %s\n" n
              (string_of_program p) ;
            flush_everything ()
@@ -1162,25 +1201,25 @@ let[@warning "-20"] performance_test_case () =
   time_it "evaluate program many times" (fun () ->
       0 -- n
       |> List.iter ~f:(fun j ->
-             if j = n
-             then
+             if j = n then
                Printf.printf "%s\n"
                  (evaluate [] e xs
                  |> List.map ~f:Int.to_string
                  |> join ~separator:" "
                  )
-             else ignore (evaluate [] e xs)
+             else
+               ignore (evaluate [] e xs)
          )
   ) ;
   let c = analyze_evaluation e [] in
   time_it "evaluate analyzed program many times" (fun () ->
       0 -- n
       |> List.iter ~f:(fun j ->
-             if j = n
-             then
+             if j = n then
                Printf.printf "%s\n"
                  (c xs |> List.map ~f:Int.to_string |> join ~separator:" ")
-             else ignore (c xs)
+             else
+               ignore (c xs)
          )
   )
 

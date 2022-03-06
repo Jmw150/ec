@@ -5,11 +5,12 @@ open Obj
 
 let power_of exponent natural =
   let rec loop n =
-    if n = natural
-    then true
-    else if n > natural
-    then false
-    else loop (n * exponent)
+    if n = natural then
+      true
+    else if n > natural then
+      false
+    else
+      loop (n * exponent)
   in
   loop 1
 
@@ -30,7 +31,12 @@ let join ?(separator = " ") elements = String.concat ~sep:separator elements
 (*   if n <= 0 then [] else  x::(replicate (n - 1) x) *)
 
 (* vector operations *)
-let rec zeros n = if n <= 0 then [] else 0.0 :: zeros (n - 1)
+let rec zeros n =
+  if n <= 0 then
+    []
+  else
+    0.0 :: zeros (n - 1)
+
 let ( +| ) a b = List.map2_exn ~f:( +. ) a b
 let ( *| ) a v = v |> List.map ~f:(fun x -> a *. x)
 let compose f g x = f (g x)
@@ -47,7 +53,12 @@ let occurs_multiple_times (xs : 'a list) : 'a list =
      ) ;
   f
   |> Hashtbl.to_alist
-  |> List.filter_map ~f:(fun (k, f) -> if f > 1 then Some k else None)
+  |> List.filter_map ~f:(fun (k, f) ->
+         if f > 1 then
+           Some k
+         else
+           None
+     )
 
 let fold1 f l = List.fold_right ~init:(List.hd_exn l) ~f (List.tl_exn l)
 
@@ -71,15 +82,34 @@ let safe_get_some message = function
 
 let sum = List.fold_left ~f:( + ) ~init:0
 let minimum l = List.reduce_exn l ~f:min
-let minimum_by f l = List.reduce_exn l ~f:(fun x y -> if f x < f y then x else y)
-let maximum_by f l = List.reduce_exn l ~f:(fun x y -> if f x > f y then x else y)
+
+let minimum_by f l =
+  List.reduce_exn l ~f:(fun x y ->
+      if f x < f y then
+        x
+      else
+        y
+  )
+
+let maximum_by f l =
+  List.reduce_exn l ~f:(fun x y ->
+      if f x > f y then
+        x
+      else
+        y
+  )
 
 let sort_by f l =
   List.sort
     ~compare:(fun x y ->
       let x = f x in
       let y = f y in
-      if x = y then 0 else if x > y then 1 else -1
+      if x = y then
+        0
+      else if x > y then
+        1
+      else
+        -1
     )
     l
 
@@ -95,7 +125,10 @@ let memorize f =
 
 let maximum_by ~cmp l =
   List.fold_left ~init:(List.hd_exn l) (List.tl_exn l) ~f:(fun a b ->
-      if cmp a b > 0 then a else b
+      if cmp a b > 0 then
+        a
+      else
+        b
   )
 
 let rec map_list f = function
@@ -116,7 +149,11 @@ let index_of l x =
   let rec loop a r =
     match r with
     | [] -> raise (Failure "index_of: not found")
-    | y :: ys -> if y = x then a else loop (a + 1) ys
+    | y :: ys ->
+        if y = x then
+          a
+        else
+          loop (a + 1) ys
   in
   loop 0 l
 
@@ -127,13 +164,14 @@ let set_equal c x y =
 let log2 = log 2.
 
 let lse x y =
-  if is_invalid x
-  then y
-  else if is_invalid y
-  then x
-  else if x > y
-  then x +. log (1.0 +. exp (y -. x))
-  else y +. log (1.0 +. exp (x -. y))
+  if is_invalid x then
+    y
+  else if is_invalid y then
+    x
+  else if x > y then
+    x +. log (1.0 +. exp (y -. x))
+  else
+    y +. log (1.0 +. exp (x -. y))
 
 let softMax = lse
 
@@ -172,13 +210,23 @@ let combine_with f _ a b =
 let flip f x y = f y x
 
 let ( -- ) i j =
-  let rec aux n acc = if n < i then acc else aux (n - 1) (n :: acc) in
+  let rec aux n acc =
+    if n < i then
+      acc
+    else
+      aux (n - 1) (n :: acc)
+  in
   aux j []
 
 let range n = 0 -- (n - 1)
 
 let float_interval (i : float) (s : float) (j : float) : float list =
-  let rec aux n acc = if n < i then acc else aux (n -. s) (n :: acc) in
+  let rec aux n acc =
+    if n < i then
+      acc
+    else
+      aux (n -. s) (n :: acc)
+  in
   aux j []
 
 (* let time () = *)
@@ -192,8 +240,7 @@ let flush_everything () =
 let time_it ?(verbose = true) description callback =
   let start_time = Time.now () in
   let return_value = callback () in
-  if verbose
-  then (
+  if verbose then (
     Printf.eprintf "%s in %s.\n" description
       (Time.diff (Time.now ()) start_time |> Time.Span.to_string) ;
     flush_everything ()
@@ -222,8 +269,7 @@ let update_progress_bar bar new_progress =
   in
   let new_dots = Int.of_float @@ (Float.of_int new_progress *. 80.0 /. max) in
   bar.current_progress <- new_progress ;
-  if new_dots > old_dots
-  then
+  if new_dots > old_dots then
     let difference = min 80 (new_dots - old_dots) in
     List.iter (1 -- difference) (fun _ ->
         Out_channel.output_char stdout '.' ;
@@ -297,7 +343,10 @@ let print_arguments () =
 (* samplers adapted from gsl *)
 let rec uniform_positive () =
   let u = Random.float 1.0 in
-  if u > 0.0 then u else uniform_positive ()
+  if u > 0.0 then
+    u
+  else
+    uniform_positive ()
 
 let uniform_interval ~l ~u =
   assert (u > l) ;
@@ -305,8 +354,7 @@ let uniform_interval ~l ~u =
   ((l +. u) /. 2.) +. ((u -. l) *. x)
 
 let rec sample_gamma a b =
-  if a < 1.0
-  then
+  if a < 1.0 then
     let u = uniform_positive () in
     sample_gamma (1.0 +. a) b *. (u ** (1.0 /. a))
   else
@@ -316,15 +364,21 @@ let rec sample_gamma a b =
       let rec inner_loop () =
         let x = normal 1.0 0.0 in
         let v = 1.0 +. (c *. x) in
-        if v > 0.0 then (v, x) else inner_loop ()
+        if v > 0.0 then
+          (v, x)
+        else
+          inner_loop ()
       in
       let v, x = inner_loop () in
       let v = v *. v *. v in
       let u = uniform_positive () in
-      if u < 1.0 -. (0.0331 *. x *. x *. x *. x)
-         || log u < (0.5 *. x *. x) +. (d *. (1.0 -. v +. log v))
-      then b *. d *. v
-      else loop ()
+      if
+        u < 1.0 -. (0.0331 *. x *. x *. x *. x)
+        || log u < (0.5 *. x *. x) +. (d *. (1.0 -. v +. log v))
+      then
+        b *. d *. v
+      else
+        loop ()
     in
     loop ()
 
@@ -380,10 +434,16 @@ let compare_list c xs ys =
     | [], [] -> 0
     | a :: b, u :: v ->
         let d = c a u in
-        if d = 0 then r b v else d
+        if d = 0 then
+          r b v
+        else
+          d
     | _ -> assert false
   in
-  if d = 0 then r xs ys else d
+  if d = 0 then
+    r xs ys
+  else
+    d
 
 (* resizable arrays *)
 type 'a ra = {
@@ -396,13 +456,12 @@ let empty_resizable () =
 
 let push_resizable a x =
   let l = Array.length a.ra_contents in
-  if a.ra_occupancy >= l
-  then (
+  if a.ra_occupancy >= l then (
     let n = Array.create ~len:(l * 2) None in
     Array.blito ~src:a.ra_contents ~dst:n () ;
     a.ra_contents <- n
-  )
-  else () ;
+  ) else
+    () ;
 
   Array.set a.ra_contents a.ra_occupancy (Some x) ;
   a.ra_occupancy <- a.ra_occupancy + 1
@@ -416,8 +475,8 @@ let set_resizable a i v =
   Array.set a.ra_contents i (Some v)
 
 let rec ensure_resizable_length a l default =
-  if a.ra_occupancy >= l
-  then ()
+  if a.ra_occupancy >= l then
+    ()
   else (
     push_resizable a default ;
     ensure_resizable_length a l default

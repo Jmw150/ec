@@ -93,8 +93,8 @@ ignore
      (tint @> (tint @> ttower) @> ttower @> ttower)
      (let rec f (start : int) (stop : int) (body : int -> tt) : tt =
        fun (hand : tower_state) ->
-        if start >= stop
-        then (hand, [])
+        if start >= stop then
+          (hand, [])
         else
           let hand', thisIteration = body start hand in
           let hand'', laterIterations = f (start + 1) stop body hand' in
@@ -157,7 +157,10 @@ let simulate_without_physics plan =
     let x2 = x + (w / 2) in
     let x1' = x' - (w' / 2) in
     let x2' = x' + (w' / 2) in
-    if x1' >= x2 || x1 >= x2' then None else Some (y' + (h / 2) + (h' / 2))
+    if x1' >= x2 || x1 >= x2' then
+      None
+    else
+      Some (y' + (h / 2) + (h' / 2))
   in
 
   let lowest_possible_height (_, _, h) = h / 2 in
@@ -179,14 +182,19 @@ let simulate_without_physics plan =
   let simulated =
     run plan []
     |> List.sort ~compare:(fun x y ->
-           if x > y then 1 else if x < y then -1 else 0
+           if x > y then
+             1
+           else if x < y then
+             -1
+           else
+             0
        )
   in
   simulated
 
 let blocks_extent blocks =
-  if blocks = []
-  then 0
+  if blocks = [] then
+    0
   else
     let xs = blocks |> List.map ~f:(fun (x, _, _, _) -> x) in
     let x1 = List.fold_left ~init:(List.hd_exn xs) ~f:max xs in
@@ -194,8 +202,8 @@ let blocks_extent blocks =
     x1 - x0
 
 let tower_height blocks =
-  if blocks = []
-  then 0
+  if blocks = [] then
+    0
   else
     let ys = blocks |> List.map ~f:(fun (_, y, _, h) -> y + (h / 2)) in
     let y1 = List.fold_left ~init:(List.hd_exn ys) ~f:max ys in
@@ -242,9 +250,10 @@ let evaluate_discrete_tower_program timeout p =
         (* if the synthesized program generated an exception, then we just terminate w/ false *)
         (* but if the enumeration timeout was triggered during program evaluation, we need to pass the exception on *)
         | otherException ->
-            if otherException = EnumerationTimeout
-            then raise EnumerationTimeout
-            else []
+            if otherException = EnumerationTimeout then
+              raise EnumerationTimeout
+            else
+              []
       in
       recent_discrete := new_discrete ;
       new_discrete
@@ -278,7 +287,10 @@ register_special_task "supervisedTower"
         (fun p ->
           let hit = evaluate_discrete_tower_program timeout p = plan in
           (* Printf.eprintf "\t%b\n\n" hit; *)
-          if hit then 0. else log 0.
+          if hit then
+            0.
+          else
+            log 0.
         );
     }
 )

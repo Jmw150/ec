@@ -1,0 +1,11 @@
+B ../_build/default/logoLib/.logoLib.objs
+B /home/jmw150/.opam/default/lib/cairo2
+B /home/jmw150/.opam/default/lib/gg
+B /home/jmw150/.opam/default/lib/vg
+B /usr/lib/ocaml
+FLG -open LogoLib -w -40
+S .
+S /home/jmw150/.opam/default/lib/cairo2
+S /home/jmw150/.opam/default/lib/gg
+S /home/jmw150/.opam/default/lib/vg
+S /usr/lib/ocaml

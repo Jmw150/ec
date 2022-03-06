@@ -44,8 +44,8 @@ let remove_bad_dreams behavior_to_programs :
       outputs
       |> List.iteri ~f:(fun output_index this_output ->
              (* Record that we are one of the behaviors that produces this output *)
-             if this_output = PolyValue.None
-             then ()
+             if this_output = PolyValue.None then
+               ()
              else
                match Hashtbl.find containers.(output_index) this_output with
                | None ->
@@ -64,8 +64,8 @@ let remove_bad_dreams behavior_to_programs :
     (* Initialize dominating to be the smallest set *)
     outputs
     |> List.iteri ~f:(fun output_index this_output ->
-           if this_output = PolyValue.None
-           then ()
+           if this_output = PolyValue.None then
+             ()
            else
              match Hashtbl.find containers.(output_index) this_output with
              | None -> assert false
@@ -79,8 +79,8 @@ let remove_bad_dreams behavior_to_programs :
 
     outputs
     |> List.iteri ~f:(fun output_index this_output ->
-           if this_output = PolyValue.None
-           then ()
+           if this_output = PolyValue.None then
+             ()
            else
              match Hashtbl.find containers.(output_index) this_output with
              | None -> assert false
@@ -91,8 +91,7 @@ let remove_bad_dreams behavior_to_programs :
                )
        ) ;
     let nightmare = Int.Set.length (!dominating |> get_some) > 1 in
-    if nightmare && false
-    then (
+    if nightmare && false then (
       Printf.eprintf "NIGHTMARE!!!" ;
       get_resizable output_vectors i
       |> snd
@@ -108,12 +107,11 @@ let remove_bad_dreams behavior_to_programs :
   let sweet_dreams =
     List.range 0 output_vectors.ra_occupancy
     |> List.filter_map ~f:(fun i ->
-           if is_bad_index i
-           then (
+           if is_bad_index i then (
              incr number_of_nightmares ;
              None
-           )
-           else Some (get_resizable output_vectors i)
+           ) else
+             Some (get_resizable output_vectors i)
        )
   in
   Printf.eprintf "Removed %d nightmares in %s.\n" !number_of_nightmares
@@ -157,8 +155,7 @@ let helmholtz_enumeration
         (* therefore we have the same extra cost *)
         assert (extra_cost = extra_cost') ;
         (* Given that the above holds, we also know that l' = l *)
-        if not (l = l')
-        then
+        if not (l = l') then
           Printf.eprintf "costs:\t%f\t%flikelihood:\t%f\t%f\n" extra_cost
             extra_cost' l l' ;
         assert (l = l') ;
@@ -176,16 +173,16 @@ let helmholtz_enumeration
   set_enumeration_timeout timeout ;
 
   let rec loop lb =
-    if enumeration_timed_out ()
-    then ()
+    if enumeration_timed_out () then
+      ()
     else
       let final_results =
         enumerate_programs ~extraQuiet:true ~nc
           ~final:(fun () -> [ behavior_to_programs ])
           g request lb (lb +. 1.5)
           (fun p l ->
-            if Hashtbl.length behavior_to_programs > maximumSize
-            then set_enumeration_timeout (-1.0)
+            if Hashtbl.length behavior_to_programs > maximumSize then
+              set_enumeration_timeout (-1.0)
             else
               match behavior_hash p with
               | Some (key, extra_cost) ->
@@ -212,7 +209,10 @@ let rec unpack x =
           | _ -> (
               try
                 let v = x |> to_string in
-                if String.length v = 1 then magical v.[0] else magical v
+                if String.length v = 1 then
+                  magical v.[0]
+                else
+                  magical v
               with
               | _ -> (
                   try x |> to_list |> List.map ~f:unpack |> magical with
@@ -267,9 +267,10 @@ let default_hash ?(timeout = 0.001) request inputs :
              | _ -> PolyValue.None
          )
     in
-    if List.exists outputs ~f:PolyValue.is_some
-    then Some (outputs, 0.)
-    else None
+    if List.exists outputs ~f:PolyValue.is_some then
+      Some (outputs, 0.)
+    else
+      None
 
 let string_hash ?(timeout = 0.001) request inputs :
     program -> (PolyList.t * float) option =
@@ -307,9 +308,10 @@ let string_hash ?(timeout = 0.001) request inputs :
              | _ -> assert false
          )
     in
-    if List.exists constant_results ~f:PolyValue.is_some
-    then Some (constant_results, 0.)
-    else None
+    if List.exists constant_results ~f:PolyValue.is_some then
+      Some (constant_results, 0.)
+    else
+      None
 ;;
 
 register_special_helmholtz "string" string_hash
@@ -370,8 +372,8 @@ let tower_hash ?(timeout = 0.001) request inputs :
     let l = List.length arrangement in
     let w = blocks_extent arrangement in
     let h = tower_height arrangement in
-    if l = 0 || l > 100 || w > 360 || h > 250
-    then None
+    if l = 0 || l > 100 || w > 360 || h > 250 then
+      None
     else
       let j =
         PolyValue.List
@@ -409,8 +411,8 @@ let logo_hash ?(timeout = 0.001) request inputs :
       run_for_interval ~attempts:2 timeout (fun () ->
           let x = run_lazy_analyzed_with_arguments p [] in
           let l = LogoLib.LogoInterpreter.turtle_to_list x in
-          if not (LogoLib.LogoInterpreter.logo_contained_in_canvas l)
-          then None
+          if not (LogoLib.LogoInterpreter.logo_contained_in_canvas l) then
+            None
           else
             match Hashtbl.find table l with
             | Some a -> Some a
@@ -428,7 +430,12 @@ let logo_hash ?(timeout = 0.001) request inputs :
           PolyValue.List
             (range (28 * 28) |> List.map ~f:(fun i -> PolyValue.Integer a.{i}))
         in
-        let cost = if costMatters then cost else 0. in
+        let cost =
+          if costMatters then
+            cost
+          else
+            0.
+        in
         Some ([ j ], cost)
 ;;
 
@@ -461,8 +468,8 @@ let regex_hash ?(timeout = 0.001) request inputs :
     build_constant_regex [ 'c'; 'o'; 'n'; 's'; 't'; '9'; '#' ]
   in
   fun expression ->
-    if number_of_free_parameters expression > 1
-    then None
+    if number_of_free_parameters expression > 1 then
+      None
     else
       run_for_interval ~attempts:2 timeout (fun () ->
           let r =

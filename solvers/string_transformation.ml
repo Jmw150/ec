@@ -57,8 +57,22 @@ let primitive_slice_string =
   primitive "slice-string"
     (tint @> tint @> tstring @> tstring)
     (fun i j s ->
-      let i = i + if i < 0 then String.length s else 0 in
-      let j = j + if j < 0 then 1 + String.length s else 0 in
+      let i =
+        i
+        +
+        if i < 0 then
+          String.length s
+        else
+          0
+      in
+      let j =
+        j
+        +
+        if j < 0 then
+          1 + String.length s
+        else
+          0
+      in
       String.sub s ~pos:i ~len:(j - i)
     )
 
@@ -66,7 +80,14 @@ let primitive_nth_string =
   primitive "nth"
     (tint @> tlist tstring @> tstring)
     (fun n words ->
-      let n = n + if n < 0 then List.length words else 0 in
+      let n =
+        n
+        +
+        if n < 0 then
+          List.length words
+        else
+          0
+      in
       List.nth_exn words n
     )
 
@@ -84,15 +105,16 @@ let primitive_replace =
   primitive "string-replace"
     (tstring @> tstring @> tstring @> tstring)
     (fun x y s ->
-      if String.length x = 0
-      then raise (Failure "Replacing empty string")
+      if String.length x = 0 then
+        raise (Failure "Replacing empty string")
       else
         let rec loop s =
-          if String.length s = 0
-          then s
-          else if String.is_prefix s ~prefix:x
-          then y ^ (String.drop_prefix s (String.length x) |> loop)
-          else String.prefix s 1 ^ (String.drop_prefix s 1 |> loop)
+          if String.length s = 0 then
+            s
+          else if String.is_prefix s ~prefix:x then
+            y ^ (String.drop_prefix s (String.length x) |> loop)
+          else
+            String.prefix s 1 ^ (String.drop_prefix s 1 |> loop)
         in
         loop s
     )
