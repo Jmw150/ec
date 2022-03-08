@@ -247,7 +247,7 @@ def summaryStatistics(n, times):
 
 # }}}
 
-
+# the reason for this, is because it is a user option to clear these metrics each loop
 def updateTaskSummaryMetrics(taskSummaryMetrics, newMetricsDict, key):
     """Updates a taskSummaryMetrics dict from tasks -> metrics with new metrics under the given key."""
     # {{{
@@ -256,8 +256,6 @@ def updateTaskSummaryMetrics(taskSummaryMetrics, newMetricsDict, key):
             taskSummaryMetrics[task][key] = newMetricsDict[task]
         else:
             taskSummaryMetrics[task] = {key: newMetricsDict[task]}
-
-
 # }}}
 
 

@@ -2,6 +2,8 @@
 #       clean up code
 #       document...
 
+# libraries
+#{{{
 import datetime
 
 import dill # because it is a pickling (file compression) library
@@ -20,6 +22,7 @@ from dreamcoder.taskBatcher import *
 from dreamcoder.primitiveGraph import graphPrimitives
 
 from dreamcoder.dreaming import backgroundHelmholtzEnumeration
+#}}}
 
 
 class ECResult:
@@ -165,7 +168,6 @@ class ECResult:
 
     # }}}
 
-
 # }}}
 
 ECResult.abbreviationToParameter = {v: k for k, v in ECResult.abbreviations.items()}
@@ -178,9 +180,14 @@ def explorationCompression(*arguments, **keywords):
     return r
     # }}}
 
-# NOTE: main program?, at least from bin/list.py
+
+# main program, at least from bin/list.py
 def ecIterator(
     # {{{
+
+    # set up
+#{{{
+
     # inputs
 #{{{
     grammar,
@@ -435,7 +442,7 @@ def ecIterator(
                     *args, **kw
                 )
             )
-        else:
+        else: # _ and then exit()
             _enumerator = lambda *args, **kw: multicoreEnumeration(
                 result.grammars[-1], *args, **kw
             )
@@ -506,7 +513,8 @@ def ecIterator(
         if useRecognitionModel:
             ECResult.clearRecognitionModel(path)
 
-        sys.exit(0)
+        sys.exit(0) #oh?
+#}}}
 #}}}
 
     # main loop of the system
@@ -519,15 +527,15 @@ def ecIterator(
             result.recognitionTaskMetrics = {}
 #}}}
 
-        reportMemory()
+        reportMemory() # report RAM in use from program
 
-        # Sleep - DREAM? 
-
-        # Evaluate on held out tasks, if we have them
+        # testing, some awake training
 #{{{
+        # Evaluate on held out tasks, if we have them
         if testingTimeout > 0 and ((j % testEvery == 0) or (j == iterations - 1)):
             eprint("Evaluating on held out testing tasks for iteration: %d" % (j))
             evaluateOnTestingTasks(
+#{{{
                 result,
                 testingTasks,
                 grammar,
@@ -536,12 +544,14 @@ def ecIterator(
                 solver=solver,
                 enumerationTimeout=testingTimeout,
                 evaluationTimeout=evaluationTimeout,
+#}}}
             )
 #}}}
 
+        # Sleep - dream
+#{{{
         # If we have to also enumerate Helmholtz frontiers,
         # do this extra sneaky in the background
-#{{{
         if (
             useRecognitionModel
             and biasOptimal
@@ -565,15 +575,15 @@ def ecIterator(
 
         reportMemory()
 
-        # Get waking task batch.
+        # Get (and print size of) waking task batch.
 #{{{
         wakingTaskBatch = taskBatcher.getTaskBatch(result, tasks, taskBatchSize, j)
-#}}}
         eprint("Using a waking task batch of size: " + str(len(wakingTaskBatch)))
+#}}}
 
-        # WAKING UP
+        # Awake 
 #{{{
-        # useSDL flag -> wake code generation
+        # top-down enumeration
 #{{{
         if useDSL:
             wake_generative = (
@@ -600,8 +610,11 @@ def ecIterator(
             topDownFrontiers, times = [], {t: None for t in wakingTaskBatch}
 #}}}
 
+        # sum number of hits
+#{{{
         tasksHitTopDown = {f.task for f in topDownFrontiers if not f.empty}
         result.hitsAtEachWake.append(len(tasksHitTopDown))
+#}}}
 
         reportMemory()
 
@@ -624,17 +637,22 @@ def ecIterator(
         # Train + use recognition model
 #{{{
         if useRecognitionModel:
-            # Should we initialize the weights to be what they were before?
+
+            # set previous recognition model
+#{{{
             previousRecognitionModel = None
             if reuseRecognition and result.recognitionModel is not None:
                 previousRecognitionModel = result.recognitionModel
+#}}}
 
             thisRatio = helmholtzRatio
             # if j == 0 and not biasOptimal: thisRatio = 0
             if all(f.empty for f in result.allFrontiers.values()):
                 thisRatio = 1.0
 
+            # apply sleep recognition, not training it
             tasksHitBottomUp = sleep_recognition(
+#{{{
                 result,
                 grammar,
                 wakingTaskBatch,
@@ -660,6 +678,7 @@ def ecIterator(
                 solver=solver,
                 recognitionSteps=recognitionSteps,
                 maximumFrontier=maximumFrontier,
+#}}}
             )
 
             showHitMatrix(tasksHitTopDown, tasksHitBottomUp, wakingTaskBatch)
@@ -683,7 +702,7 @@ def ecIterator(
 #}}}
 #}}}
 
-        # Sleep-G
+        # Sleep - abstraction
 #{{{
         if useDSL and not (noConsolidation):
             eprint(f"Currently using this much memory: {getThisMemoryUsage()}")
@@ -705,7 +724,7 @@ def ecIterator(
             result.grammars.append(grammar)
 #}}}
 
-        # pickle model, print out PDFs of productions
+        # save model, print out PDFs of grammar productions
 #{{{
         if outputPrefix is not None:
             path = checkpointPath(j + 1)
@@ -725,7 +744,6 @@ def ecIterator(
 
         yield result
     # }}}
-
 
 def showHitMatrix(top, bottom, tasks):
     # {{{
@@ -751,9 +769,9 @@ def showHitMatrix(top, bottom, tasks):
 
 # }}}
 
-
 def evaluateOnTestingTasks(
     # {{{
+#{{{
     result,
     testingTasks,
     grammar,
@@ -763,10 +781,15 @@ def evaluateOnTestingTasks(
     maximumFrontier=None,
     enumerationTimeout=None,
     evaluationTimeout=None,
+#}}}
 ):
+    # eval as recognition + enumeration, or just enumeration
+#{{{
     if result.recognitionModel is not None:
 #{{{
         recognizer = result.recognitionModel
+    
+        # enumeration
         testingFrontiers, times = recognizer.enumerateFrontiers(
             testingTasks,
             CPUs=CPUs,
@@ -776,23 +799,39 @@ def evaluateOnTestingTasks(
             evaluationTimeout=evaluationTimeout,
             testing=True,
         )
+
+        # update logit nn space
+#{{{
         updateTaskSummaryMetrics(
+        # updateTaskSummaryMetrics(dest, source, key) == 
+        #   forall t in source, (dest[t][key] <- source[t])
             result.recognitionTaskMetrics,
+
+            #?
             recognizer.taskGrammarLogProductions(testingTasks),
             "heldoutTaskLogProductions",
         )
+#}}}
+
+        # update entropy nn space
+#{{{
         updateTaskSummaryMetrics(
             result.recognitionTaskMetrics,
+
+            #?
             recognizer.taskGrammarEntropies(testingTasks),
             "heldoutTaskGrammarEntropies",
         )
+
+        # Why twice?
         updateTaskSummaryMetrics(
             result.recognitionTaskMetrics,
             recognizer.taskGrammarEntropies(testingTasks),
             "heldoutTaskGrammarEntropies",
         )
 #}}}
-    else:
+#}}}
+    else: # enumeration
 #{{{
         testingFrontiers, times = multicoreEnumeration(
             grammar,
@@ -805,14 +844,20 @@ def evaluateOnTestingTasks(
             testing=True,
         )
 #}}}
+#}}}
+
     updateTaskSummaryMetrics(
-        result.recognitionTaskMetrics, times, "heldoutTestingTimes"
+        result.recognitionTaskMetrics, 
+        times, 
+        "heldoutTestingTimes"
     )
     updateTaskSummaryMetrics(
         result.recognitionTaskMetrics,
         {f.task: f for f in testingFrontiers if len(f) > 0},
         "frontier",
     )
+
+    # ?
     for f in testingFrontiers:
         result.recordFrontier(f)
     result.testSearchTime = {t: tm for t, tm in times.items() if tm is not None}
@@ -856,15 +901,16 @@ def default_wake_generative(
 
 def sleep_recognition(
     # {{{
+#{{{
     result,
     grammar,
     taskBatch,
     tasks,
-    testingTasks,  # 5 args
+    testingTasks,  
     allFrontiers,
     _=None,
     ensembleSize=1,
-    featureExtractor=None,  # 9 args
+    featureExtractor=None,  
     matrixRank=None,
     mask=False,
     activation=None,
@@ -882,13 +928,13 @@ def sleep_recognition(
     cuda=None,
     CPUs=None,
     solver=None,
+#}}}
 ):
     eprint(
         "Using an ensemble size of %d. Note that we will only store and test on the best recognition model."
         % ensembleSize
     )
 
-    # featureExtractor is...
     featureExtractorObjects = [
         featureExtractor(tasks, testingTasks=testingTasks, cuda=cuda)
         for i in range(ensembleSize)
@@ -896,6 +942,7 @@ def sleep_recognition(
 
     recognizers = [
         RecognitionModel(
+#{{{
             featureExtractorObjects[i],
             grammar,
             mask=mask,
@@ -905,10 +952,13 @@ def sleep_recognition(
             contextual=contextual,
             previousRecognitionModel=previousRecognitionModel,
             id=i,
+#}}}
         )
         for i in range(ensembleSize)
     ]
     eprint(f"Currently using this much memory: {getThisMemoryUsage()}")
+
+    # ?
     trainedRecognizers = parallelMap(
         min(CPUs, len(recognizers)),
         lambda recognizer: recognizer.train(
@@ -1051,7 +1101,10 @@ def sleep_recognition(
 
 
 def consolidate(
+    # This is the start of the compressor used in abstraction sleep
     # {{{
+    # arg*
+#{{{
     result,
     grammar,
     _=None,
@@ -1063,15 +1116,18 @@ def consolidate(
     compressor=None,
     CPUs=None,
     iteration=None,
+#}}}
 ):
     eprint("Showing the top 5 programs in each frontier being sent to the compressor:")
+#{{{
     for f in result.allFrontiers.values():
         if f.empty:
             continue
         eprint(f.task)
-        for e in f.normalize().topK(5):
+        for e in f.normalize().topK(5): #NOTE: found hard set on display - jw
             eprint("%.02f\t%s" % (e.logPosterior, e.program))
         eprint()
+#}}}
 
     # First check if we have supervision at the program level for any task that was not solved
     needToSupervise = {
@@ -1108,9 +1164,7 @@ def consolidate(
     eprint("Grammar after iteration %d:" % (iteration + 1))
     eprint(grammar)
 
-    return grammar
-
-
+    return grammar 
 # }}}
 
 

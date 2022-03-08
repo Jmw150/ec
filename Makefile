@@ -1,3 +1,7 @@
+# solver has python, and pypy versions
+# helmholtz seems to only exist as Ocaml
+# compression exists as memorize (pure python), pypy, Ocaml, or Rust
+
 all:
 	rm -f data/geom/logoDrawString
 	cd solvers && \

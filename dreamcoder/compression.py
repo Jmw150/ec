@@ -21,6 +21,7 @@ def induceGrammar(*args, **kwargs):
         return args[0], args[1]
     backend = kwargs.pop("backend", "pypy")
     if "pypy" in backend:
+#{{{
         # pypy might not like some of the imports needed for the primitives
         # but the primitive values are irrelevant for compression
         # therefore strip them out and then replace them once we are done
@@ -34,6 +35,7 @@ def induceGrammar(*args, **kwargs):
             for f in frontiers
         ]
         args = [g0, frontiers]
+#}}}
 
     with timing("Induced a grammar"):
         if backend == "pypy":

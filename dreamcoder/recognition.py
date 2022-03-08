@@ -83,7 +83,6 @@ def _relu(x):
 
 class Entropy(nn.Module):
     """Calculates the entropy of logits"""
-
     # {{{
     # logits is what the torch community calls (-inf,inf) values of neural output.
     #   They are not necessarily actual logits.
@@ -103,7 +102,6 @@ class Entropy(nn.Module):
 
 class GrammarNetwork(nn.Module):
     """Neural network that outputs a grammar"""
-
     # {{{
     def __init__(self, inputDimensionality, grammar):
         # {{{
@@ -1024,10 +1022,16 @@ class RecognitionModel(nn.Module):
     def grammarLogProductionsOfTask(self, task):
         """Returns the grammar logits from non-contextual models."""
         # {{{
+        
+        # feature extractor network
+#{{{
         features = self.featureExtractor.featuresOfTask(task)
         if features is None:
             return None
+#}}}
 
+        # simple scaling network
+#{{{
         if hasattr(self, "hiddenLayers"):
             # Backward compatability with old checkpoints.
             for layer in self.hiddenLayers:
@@ -1036,7 +1040,10 @@ class RecognitionModel(nn.Module):
             return self.noParent[1](features)
         else:
             features = self._MLP(features)
+#}}}
 
+        # grammar building network
+#{{{
         if self.contextual:
             if hasattr(self.grammarBuilder, "variableParent"):
                 return self.grammarBuilder.variableParent.logProductions(features)
@@ -1048,6 +1055,7 @@ class RecognitionModel(nn.Module):
                 assert False
         else:
             return self.grammarBuilder.logProductions(features)
+#}}}
         # }}}
 
     def grammarFeatureLogProductionsOfTask(self, task):
@@ -1220,7 +1228,7 @@ class RecognitionModel(nn.Module):
         # }}}
 
     def train(
-        # {{{
+#{{{
         self,
         frontiers,
         _=None,
@@ -1237,20 +1245,29 @@ class RecognitionModel(nn.Module):
         defaultRequest=None,
         auxLoss=False,
         vectorized=True,
+#}}}
     ):
         """
         helmholtzRatio: What fraction of the training data should be forward samples from the generative model?
         helmholtzFrontiers: Frontiers from programs enumerated from generative model (optional)
         If helmholtzFrontiers is not provided then we will sample programs during training
         """
+#{{{
 
+        # runtime check
+#{{{
         assert (steps is not None) or (
             timeout is not None
         ), "Cannot train recognition model without either a bound on the number of gradient steps or bound on the training time"
+#}}}
+
+        # set defaults
+#{{{
         if steps is None:
             steps = 9999999
         if biasOptimal is None:
             biasOptimal = len(helmholtzFrontiers) > 0
+#}}}
 
         requests = [frontier.task.request for frontier in frontiers]
         if len(requests) == 0 and helmholtzRatio > 0 and len(helmholtzFrontiers) == 0:
@@ -1258,11 +1275,13 @@ class RecognitionModel(nn.Module):
                 defaultRequest is not None
             ), "You are trying to random Helmholtz training, but don't have any frontiers. Therefore we would not know the type of the program to sample. Try specifying defaultRequest=..."
             requests = [defaultRequest]
+
         frontiers = [
             frontier.topK(topK).normalize()
             for frontier in frontiers
             if not frontier.empty
         ]
+
         if len(frontiers) == 0:
             eprint(
                 "You didn't give me any nonempty replay frontiers to learn from. Going to learn from 100% Helmholtz samples"
@@ -1323,17 +1342,17 @@ class RecognitionModel(nn.Module):
             # {{{
             if randomHelmholtz:
                 if helmholtzIndex[0] >= len(helmholtzFrontiers):
-                    updateHelmholtzTasks()
+                    updateHelmholtzTasks() # learnin'
                     helmholtzIndex[0] = 0
-                    return getHelmholtz()
+                    return getHelmholtz() # rec
                 helmholtzIndex[0] += 1
                 return helmholtzFrontiers[helmholtzIndex[0] - 1].makeFrontier()
 
             f = helmholtzFrontiers[helmholtzIndex[0]]
             if f.task is None:
                 with timing("Evaluated another batch of Helmholtz tasks"):
-                    updateHelmholtzTasks()
-                return getHelmholtz()
+                    updateHelmholtzTasks() # learning
+                return getHelmholtz() # rec
 
             helmholtzIndex[0] += 1
             if helmholtzIndex[0] >= len(helmholtzFrontiers):
@@ -1432,6 +1451,7 @@ class RecognitionModel(nn.Module):
             for i in reversed(badIndices):
                 assert helmholtzFrontiers[i].task is None
                 del helmholtzFrontiers[i]
+#}}}
 
         # We replace each program in the frontier with its likelihoodSummary
         # This is because calculating likelihood summaries requires juggling types
@@ -1476,7 +1496,7 @@ class RecognitionModel(nn.Module):
         )
         classificationLosses = []
         totalGradientSteps = 0
-        epochs = 9999999
+        epochs = 9999999  # but, there are many breakout cases
         for i in range(1, epochs + 1):
             if timeout and time.time() - start > timeout:
                 break
@@ -1495,7 +1515,7 @@ class RecognitionModel(nn.Module):
                 # Randomly decide whether to sample from the generative model
                 dreaming = random.random() < helmholtzRatio
                 if dreaming:
-                    frontier = getHelmholtz()
+                    frontier = getHelmholtz() 
                 self.zero_grad()
                 loss, classificationLoss = (
                     self.frontierBiasOptimal(
@@ -1521,9 +1541,9 @@ class RecognitionModel(nn.Module):
                 if is_torch_invalid(loss):
                     eprint("Invalid real-data loss!")
                 else:
-                    (loss + classificationLoss).backward()
+                    (loss + classificationLoss).backward() # rare act of machine learning
                     classificationLosses.append(classificationLoss.data.item())
-                    optimizer.step()
+                    optimizer.step() # machine learning
                     totalGradientSteps += 1
                     losses.append(loss.data.item())
                     descriptionLengths.append(min(-e.logPrior for e in frontier))
@@ -1669,7 +1689,10 @@ class RecognitionModel(nn.Module):
 #}}}
     ):
         with timing("Evaluated recognition model"):
+            
+            # ?
             grammars = {task: self.grammarOfTask(task) for task in tasks}
+
             # untorch separately to make sure you filter out None grammars
             grammars = {
                 task: grammar.untorch()
@@ -1688,7 +1711,6 @@ class RecognitionModel(nn.Module):
             evaluationTimeout=evaluationTimeout,
         )
         # }}}
-
 
 # }}}
 
@@ -1952,7 +1974,6 @@ class RecurrentFeatureExtractor(nn.Module):
 
 class LowRank(nn.Module):
     """Module that outputs a rank R matrix of size m by n from input of size i."""
-
     # {{{
     def __init__(self, i, m, n, r):
         """

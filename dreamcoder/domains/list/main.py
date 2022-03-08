@@ -401,6 +401,8 @@ def main(args):
     # not actually random, "17" is the default
     random.seed(args.pop("random_seed"))
 
+    # load first part of dataset
+#{{{
     # there is a list of datasets to choose from
     dataset = args.pop("dataset")
     tasks = {
@@ -416,6 +418,7 @@ def main(args):
         "Lucas-depth2": lambda: retrieveJSONTasks("data/list_tasks2.json")[:4928],
         "Lucas-depth3": lambda: retrieveJSONTasks("data/list_tasks2.json"),
     }[dataset]()
+#}}}
 
     maxTasks = args.pop("maxTasks")
     if maxTasks and len(tasks) > maxTasks:
@@ -430,6 +433,8 @@ def main(args):
         tasks = necessaryTasks + tasks
 #}}}
 
+    # add to dataset
+#{{{
     if dataset.startswith("Lucas"):
         # extra tasks for filter
 #{{{
@@ -539,18 +544,22 @@ def main(args):
                 ]
             )
 #}}}
+#}}}
 
     def isIdentityTask(t):
 #{{{
         return all(len(xs) == 1 and xs[0] == y for xs, y in t.examples)
 #}}}
 
+    # remove identify maps from data (and print id : x -> x count)
+#{{{
     eprint(
         "Removed",
         sum(isIdentityTask(t) for t in tasks),
         "tasks that were just the identity function",
     )
     tasks = [t for t in tasks if not isIdentityTask(t)]
+#}}}
 
     prims = {
         "base": basePrimitives,
@@ -627,8 +636,7 @@ def main(args):
         train = tasks
         test = []
 
-
-
+    # sub main
     explorationCompression(baseGrammar, train, testingTasks=test, **args)
 
 #}}}
