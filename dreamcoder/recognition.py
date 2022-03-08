@@ -1541,7 +1541,7 @@ class RecognitionModel(nn.Module):
                 if is_torch_invalid(loss):
                     eprint("Invalid real-data loss!")
                 else:
-                    (loss + classificationLoss).backward() # rare act of machine learning
+                    (loss + classificationLoss).backward() # machine learning
                     classificationLosses.append(classificationLoss.data.item())
                     optimizer.step() # machine learning
                     totalGradientSteps += 1

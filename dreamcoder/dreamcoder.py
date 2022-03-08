@@ -181,7 +181,7 @@ def explorationCompression(*arguments, **keywords):
     # }}}
 
 
-# main program, at least from bin/list.py
+# main program
 def ecIterator(
     # {{{
 
@@ -529,7 +529,7 @@ def ecIterator(
 
         reportMemory() # report RAM in use from program
 
-        # testing, some awake training
+        # testing
 #{{{
         # Evaluate on held out tasks, if we have them
         if testingTimeout > 0 and ((j % testEvery == 0) or (j == iterations - 1)):
@@ -650,7 +650,7 @@ def ecIterator(
             if all(f.empty for f in result.allFrontiers.values()):
                 thisRatio = 1.0
 
-            # apply sleep recognition, not training it
+            # verify tasks and train recognizer
             tasksHitBottomUp = sleep_recognition(
 #{{{
                 result,
@@ -958,10 +958,10 @@ def sleep_recognition(
     ]
     eprint(f"Currently using this much memory: {getThisMemoryUsage()}")
 
-    # ?
+    # recognizers' training
     trainedRecognizers = parallelMap(
         min(CPUs, len(recognizers)),
-        lambda recognizer: recognizer.train(
+        lambda recognizer: recognizer.train( # rare case of learning
             allFrontiers,
             biasOptimal=biasOptimal,
             helmholtzFrontiers=helmholtzFrontiers,
