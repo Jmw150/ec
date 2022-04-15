@@ -333,7 +333,9 @@ let enumeration_timeout = ref Float.max_value
 let enumeration_timed_out () = Unix.time () > !enumeration_timeout
 let set_enumeration_timeout dt = enumeration_timeout := Unix.time () +. dt
 
+(** TAG This is the core enumeration logic, according to Kevin *)
 let rec enumerate_programs'
+    (** why are both a context g and grammar included? *)
     (cg : contextual_grammar)
     (g : grammar)
     (context : tContext)
@@ -347,11 +349,13 @@ let rec enumerate_programs'
     ?((* We sometimes bound the number of free parameters *)
       maxFreeParameters = 99)
     (callBack : program -> tContext -> float -> int -> unit) : unit =
+
   (* Enumerates programs satisfying: lowerBound <= MDL < upperBound *)
   (* INVARIANT: request always has the current context applied to it already *)
   if enumeration_timed_out () || maximumDepth < 1 || upper_bound < 0.0 then
     ()
   else
+
     match request with
     | TCon ("->", [ argument_type; return_type ], _) ->
         let newEnvironment = argument_type :: environment in
@@ -521,6 +525,7 @@ let dfs_around_skeleton cg ~maxFreeParameters ~lower_bound ~upper_bound state k
 
 let shatter_factor = ref 10
 
+(** TAG This is the enumeration meat, according to Kevin *)
 (* Putting depth first and best first gives us a parallel strategy for enumeration *)
 let multicore_enumeration
     ?(extraQuiet = false)

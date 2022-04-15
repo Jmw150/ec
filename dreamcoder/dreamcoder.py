@@ -410,6 +410,7 @@ def ecIterator(
 
     # Set up the task batcher.
 #{{{
+    # stuff like this could really use a single translation table
     if taskReranker == "default":
         taskBatcher = DefaultTaskBatcher()
     elif taskReranker == "random":
@@ -529,7 +530,7 @@ def ecIterator(
 
         reportMemory() # report RAM in use from program
 
-        # testing
+        # enumerate from prior
 #{{{
         # Evaluate on held out tasks, if we have them
         if testingTimeout > 0 and ((j % testEvery == 0) or (j == iterations - 1)):
@@ -573,10 +574,11 @@ def ecIterator(
             helmholtzFrontiers = lambda: []
 #}}}
 
+        # print statements
+#{{{
         reportMemory()
 
         # Get (and print size of) waking task batch.
-#{{{
         wakingTaskBatch = taskBatcher.getTaskBatch(result, tasks, taskBatchSize, j)
         eprint("Using a waking task batch of size: " + str(len(wakingTaskBatch)))
 #}}}
@@ -857,16 +859,21 @@ def evaluateOnTestingTasks(
         "frontier",
     )
 
-    # ?
+    # record test frontiers
     for f in testingFrontiers:
         result.recordFrontier(f)
+
+    # remove None 
     result.testSearchTime = {t: tm for t, tm in times.items() if tm is not None}
     times = [t for t in times.values() if t is not None]
+
+    # print details
     eprint("\n".join(f.summarize() for f in testingFrontiers))
     summaryStatistics("Testing tasks", times)
     eprint("Hits %d/%d testing tasks" % (len(times), len(testingTasks)))
-    result.testingSearchTime.append(times)
 
+    # testing vs test?
+    result.testingSearchTime.append(times)
 
 # }}}
 

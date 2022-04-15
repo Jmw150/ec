@@ -677,7 +677,6 @@ class ContextualGrammarNetwork_Mask(nn.Module):
 
 class ContextualGrammarNetwork(nn.Module):
     """Like GrammarNetwork but ~contextual~"""
-
     # {{{
     def __init__(self, inputDimensionality, grammar):
         # {{{
@@ -1253,7 +1252,6 @@ class RecognitionModel(nn.Module):
         If helmholtzFrontiers is not provided then we will sample programs during training
         """
 #{{{
-
         # runtime check
 #{{{
         assert (steps is not None) or (
@@ -1267,7 +1265,6 @@ class RecognitionModel(nn.Module):
             steps = 9999999
         if biasOptimal is None:
             biasOptimal = len(helmholtzFrontiers) > 0
-#}}}
 
         requests = [frontier.task.request for frontier in frontiers]
         if len(requests) == 0 and helmholtzRatio > 0 and len(helmholtzFrontiers) == 0:
@@ -1290,6 +1287,7 @@ class RecognitionModel(nn.Module):
 
         # Should we sample programs or use the enumerated programs?
         randomHelmholtz = len(helmholtzFrontiers) == 0
+#}}}
 
         class HelmholtzEntry:
             # {{{
@@ -1610,7 +1608,6 @@ class RecognitionModel(nn.Module):
         return self
         # }}}
 
-    # }}}
 
     def sampleHelmholtz(self, requests, statusUpdate=None, seed=None):
         # {{{

@@ -34,6 +34,7 @@ let supervised_task ?(timeout = 0.001) name ty examples =
   {
     name;
     task_type = ty;
+    (** TAG testing the programs is handled here, according to Kevin *)
     log_likelihood =
       (fun p ->
         let p = analyze_lazy_evaluation p in

@@ -17,9 +17,9 @@ if __name__ == "__main__":
         activation="tanh",
         iterations=10,
         recognitionTimeout=3600,
-        a=3,
+        a=3, # arity
         maximumFrontier=10,
-        topK=2,
+        topK=2, 
         pseudoCounts=30.0,
         helmholtzRatio=0.5,
         structurePenalty=1.0,
